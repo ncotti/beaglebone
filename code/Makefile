@@ -34,7 +34,7 @@ aux_linker_scripts :=
 linker_flags := -g
 
 # List of header files' directories.
-header_dirs :=
+header_dirs := inc
 
 # List of source files' directories.
 source_dirs := src
