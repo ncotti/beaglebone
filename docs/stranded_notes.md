@@ -19,40 +19,6 @@ SUBSYSTEM=="gpio", ACTION=="add", \
 Se puede poner un bit de "sudo" en los permisos de un binario, haciendo que ese archivo siempre se ejecute con permisos de root.
 ## clase
 
-El driver se ubica en el kernel, y le proporciona al usuario una API para abstraerse del hardware.
-
-Kernel monolítico: único código objeto. Requiere recompilar.
-
-MicroKernel: Modular (servicios), overhead debido a IPC.
-
-LKM Linux Kernel Module
-
-BSP: Board Support Packages
-
-Es un conjunto de bibliotecas que ofrecen una capa de abstracción del hardware al Kernel (ejemplo CMSIS de STM). Es la interface del Kernel a los Device Drivers.
-
-SYSFS: Linux Device Model (sistema de archivos virtual empezado en /sys).
-
-Standard devices: se auto descubren y enumeran: USB, PCI (mouse). El periférico envía su configuración y se "presenta", por así decirlo.
-
-Platform devices: requieren intervención de configuración externa. Módulos de un SoC.
-
-El bootloader acaba de copiar el Kenrel de Linux a la SDRAM. Luego, le transfiere el control al entrypoint y en ese momento el Kernel arranca de cero, como una aplicación bare-metal. Debería configurar todos los dispositivos (procesador, memoria virtual, monitor, etc).
-
-Solución: Device Tree:
-
-Contiene una descripción completa del hardware.
-
-En una PC, el DTB viene de la BIOS.
-
-API de acceso al DTS:
-
-(cómo acceder)
-
-* of_address_to_resource
-
-* of_property_read_string
-
 
 Para la guía:
 
