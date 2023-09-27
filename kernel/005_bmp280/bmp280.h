@@ -10,7 +10,7 @@
 #include <linux/version.h>
 
 #define DEVICE_NAME "bmp280_driver"
-#define DEVICE_CLASS_NAME "my_module_class"
+#define DEVICE_CLASS_NAME "cotti"
 #define MINOR_NUMBER 0
 #define NUMBER_OF_DEVICES 1
 #define I2C_BUS_NUMBER 1

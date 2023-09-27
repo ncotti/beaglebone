@@ -7,7 +7,7 @@
 #include <linux/gpio.h>     // gpio
 
 #define DEVICE_NAME "gpio_driver"
-#define DEVICE_CLASS_NAME "my_module_class"
+#define DEVICE_CLASS_NAME "cotti"
 #define MINOR_NUMBER 0
 #define NUMBER_OF_DEVICES 1
 #define LED_PIN 60

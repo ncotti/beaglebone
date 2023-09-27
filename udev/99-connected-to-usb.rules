@@ -1,0 +1,4 @@
+# This udev rule detects whether an USB device was connected in the top or bottom
+# USB port, and runs a simple echo command
+ACTION=="add", ATTRS{physical_location/panel}=="back", RUN+="/bin/bash -c 'echo usb_top >> /tmp/usb_top.txt'"
+ACTION=="add", ATTRS{physical_location/panel}=="unknown", RUN+="/bin/bash -c 'echo usb_bottom >> /tmp/usb_bottom.txt'"

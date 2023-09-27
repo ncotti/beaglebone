@@ -36,7 +36,7 @@ static int __init my_module_init(void) {
     int retval;
     printk("Hello, Kernel!\n");
 
-    // Allocate device number
+    // Allocate device number (MAJOR and MINOR)
     if ((retval = alloc_chrdev_region(&device_number, MINOR_NUMBER, NUMBER_OF_DEVICES, DEVICE_NAME)) != 0) {
         printk("Couldn't allocate device number\n");
         goto chrdev_error;
@@ -44,14 +44,15 @@ static int __init my_module_init(void) {
     printk("Device number allocated successfully! Major: %d, Minor: %d\n",
         MAJOR(device_number), MINOR(device_number));
 
-    // Create device class
+    // Create device class (This name will be seen as SUBSYSTEM=="DEVICE_CLASS_NAME"
+    // for udev, and a folder with the same will be created inside "/sys/class/DEVICE_CLASS_NAME" )
     if ((device_class = class_create(THIS_MODULE, DEVICE_CLASS_NAME)) == NULL) {
         printk("Device class couldn't be created\n");
         retval = -1;
         goto class_error;
     }
 
-    // Create device file
+    // Create device file (/sys/class/DEVICE_CLASS_NAME/DEVICE_NAME)
     if (device_create(device_class, NULL, device_number, NULL, DEVICE_NAME) == NULL) {
         printk("Couldn't create device file\n");
         retval = -1;

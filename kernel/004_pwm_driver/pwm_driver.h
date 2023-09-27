@@ -7,7 +7,7 @@
 #include <linux/pwm.h>      // pwm_device
 
 #define DEVICE_NAME "pwm_driver"
-#define DEVICE_CLASS_NAME "my_module_class"
+#define DEVICE_CLASS_NAME "cotti"
 #define MINOR_NUMBER 0
 #define NUMBER_OF_DEVICES 1
 #define PWM_NUMBER 0    // Which PWM you want to use, might be "0", "1", "2", etc

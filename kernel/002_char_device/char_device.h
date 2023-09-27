@@ -6,7 +6,7 @@
 #include <linux/uaccess.h>  // copy_from_user, copy_to_user
 
 #define DEVICE_NAME "echo_driver"
-#define DEVICE_CLASS_NAME "my_module_class"
+#define DEVICE_CLASS_NAME "cotti"
 #define MINOR_NUMBER 0
 #define NUMBER_OF_DEVICES 1
 
