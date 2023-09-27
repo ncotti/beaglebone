@@ -84,16 +84,19 @@ static int __init my_module_init(void) {
     }
 
     // I2C device
-    if ((bmp280_i2c_adapter = i2c_get_adapter(I2C_BUS_NUMBER)) != NULL) {
-        if ((bmp280_i2c_client = i2c_new_client_device(bmp280_i2c_adapter, &bmp280_i2c_board_info)) != NULL ) {
-            if(i2c_add_driver(&bmp280_driver) != -1) {
-                retval = 0;
-            } else {
-                printk("Can't add driver... \n");
-            }
-        }
-        i2c_put_adapter(bmp280_i2c_adapter);
+    if ((bmp280_i2c_adapter = i2c_get_adapter(I2C_BUS_NUMBER)) == NULL) {
+        printk("Couldn't get i2c adapter\n");
+        goto cdev_error;
     }
+    if ((bmp280_i2c_client = i2c_new_client_device(bmp280_i2c_adapter, &bmp280_i2c_board_info)) == NULL ) {
+        printk("Couldn't get i2c client\n");
+        goto cdev_error;
+    }
+    if((retval = i2c_add_driver(&bmp280_driver)) != 0 ) {
+        printk("Couldn't add bmp280 driver\n");
+        goto i2c_client_error;
+    }
+    i2c_put_adapter(bmp280_i2c_adapter);
     printk("BMP280 Driver added\n");
 
     // Read ID
@@ -116,6 +119,7 @@ static int __init my_module_init(void) {
     i2c_smbus_write_byte_data(bmp280_i2c_client, 0xf4, (5<<5) | (5<<2) | (3<<0) );
     return 0;
 
+	i2c_client_error: i2c_unregister_device(bmp280_i2c_client);
     cdev_error: device_destroy(device_class, device_number);
     device_error: class_destroy(device_class);
     class_error: unregister_chrdev(device_number, DEVICE_NAME);
@@ -124,8 +128,8 @@ static int __init my_module_init(void) {
 
 /// @brief This function is called when the module is removed from the kernel
 static void __exit my_module_exit(void) {
+    i2c_del_driver(&bmp280_driver);
     i2c_unregister_device(bmp280_i2c_client);
-	i2c_del_driver(&bmp280_driver);
     cdev_del(&my_device);
     device_destroy(device_class, device_number);
     class_destroy(device_class);
