@@ -72,7 +72,6 @@ static int __init my_module_init(void) {
         goto button_error;
     }
     if (gpio_set_debounce(BUTTON_PIN, DEBOUNCE_TIME) != 0) {
-        // The debounce feature might exists, but normally just return ENOSYS
         printk("Couldn't set debounce. Continuing...\n");
     }
 

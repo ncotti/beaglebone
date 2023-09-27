@@ -71,6 +71,9 @@ static int __init my_module_init(void) {
         printk("Couldn't set GPIO %d to output\n", LED_PIN);
         goto led_error;
     }
+    if (gpio_set_debounce(BUTTON_PIN, DEBOUNCE_TIME) != 0) {
+        printk("Couldn't set debounce. Continuing...\n");
+    }
 
     // Button initialization
     if ((retval = gpio_request(BUTTON_PIN, BUTTON_NAME)) != 0) {

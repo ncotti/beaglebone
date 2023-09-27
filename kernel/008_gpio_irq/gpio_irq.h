@@ -10,3 +10,4 @@ MODULE_DESCRIPTION("A simple gpio interrupt LKM. See the button press on the log
 #define BUTTON_PIN 48
 #define BUTTON_NAME "my_button"
 #define IRQ_NAME "my_gpio_irq"
+#define DEBOUNCE_TIME 500

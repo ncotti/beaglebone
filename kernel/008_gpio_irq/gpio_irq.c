@@ -27,6 +27,9 @@ static int __init my_module_init(void) {
         printk("Couldn't set GPIO %d to input\n", BUTTON_PIN);
         goto button_error;
     }
+    if (gpio_set_debounce(BUTTON_PIN, DEBOUNCE_TIME) != 0) {
+        printk("Couldn't set debounce. Continuing...\n");
+    }
 
     // Setup IRQ
     irq_number = gpio_to_irq(BUTTON_PIN);

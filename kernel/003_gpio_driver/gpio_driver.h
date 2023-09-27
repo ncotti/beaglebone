@@ -15,6 +15,7 @@
 #define LED_RESET_STATE 0
 #define BUTTON_PIN 48
 #define BUTTON_NAME "my_button"
+#define DEBOUNCE_TIME 500
 
 // Module description
 MODULE_LICENSE("GPL");
