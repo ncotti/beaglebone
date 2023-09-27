@@ -1,0 +1,7 @@
+#ifndef IOCTL_TYPES
+#define IOCTL_TYPES
+
+#define MAGIC_NUMBER 'c'
+#define IO_REGISTER_USER_APP _IO(MAGIC_NUMBER, 1)
+
+#endif // IOCTL_TYPES
