@@ -1,0 +1,49 @@
+/* Explanation of the properties #address-cells and #size-cells */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+    model = "TI AM335x BeagleBone Black";
+
+    // Used with the "reg" property for child nodes.
+    // Indicates the amount of "u32" needed for the address of the register.
+    #address-cells = <1>;
+
+    // Used with the "reg" property for child nodes.
+    // Indicates the amount of "u32" needed for the size of the register bank.
+    #size-cells = <0>;
+
+    // The @<address> refers to the base memory address for the registers
+	fragment@0 {
+        // The reg register has address value "0" and no size.
+        reg = <0>;
+		target-path = "/";
+		__overlay__ {
+            #address-cells = <1>;   // One addresses
+            #size-cells = <1>;      // One size
+
+			i2c_bus@1230 {
+                // Here, we are defining two bank of registers
+                reg = <0x1230 0x1000
+                       0x3230 0x1000 >;
+				compatible = "cotti,i2c";
+				status = "okay";
+				label = "my_i2c_bus";
+
+                #address-cells = <2>;   // Two addresses
+                #size-cells = <1>;      // One size
+
+                i2c_device@0,0x76 {
+                    // Here, we are defining the base address of the register bank,
+                    // the slave address of the i2c 0x76, and the size of the registers
+                    reg = <0 0x76 0x1000>;
+                    compatible = "cotti,i2c";
+                    status = "okay";
+                    label = "my_i2c_device";
+                };
+			};
+		};
+	};
+};
