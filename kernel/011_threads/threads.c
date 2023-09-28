@@ -5,7 +5,7 @@
 ******************************************************************************/
 
 static struct task_struct *kthread1, *kthread2;
-static int arg_t1 = 1, arg_t2 = 2;
+static int arg_t1 = 1, arg_t2 = 2;  // Arguments for threads must be static
 
 int thread_function(void *arg);
 

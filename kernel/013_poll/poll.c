@@ -21,7 +21,7 @@ static struct file_operations fops = {
 
 static unsigned int irq_number;
 static int irq_ready = 0;
-static wait_queue_head_t waitqueue;
+DECLARE_WAIT_QUEUE_HEAD(waitqueue); // Waitqueue are explained in the next example
 
 /******************************************************************************
  * Init and exit
@@ -81,9 +81,6 @@ static int __init my_module_init(void) {
         printk("Couldn't request irq number %d\n", irq_number);
         goto button_error;
     }
-
-    // Init waitqueue (return void, nothing to clean)
-    init_waitqueue_head(&waitqueue);
 
     printk("GPIO %d is mapped to IRQ %d\n", BUTTON_PIN, irq_number);
     return 0;
