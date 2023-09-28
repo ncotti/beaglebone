@@ -134,3 +134,5 @@ After rebooting, the overlay should be added. You can check it
 [U-Boot_Overlays](https://elinux.org/Beagleboard:BeagleBoneBlack_Debian#U-Boot_Overlays)
 
 [Good stuff](https://takeofftechnical.com/beaglebone-black-led-control/)
+
+https://elinux.org/Device_Tree_Usage
