@@ -1,0 +1,28 @@
+/* First approach to device tree overlays.*/
+
+/dts-v1/;
+/plugin/;
+
+/ {
+    // compatible should appear on every child node. The syntax is <manufacturer>,<model>
+    // Multiple values are accepted.
+	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+
+    model = "TI AM335x BeagleBone Black";
+
+    // Numbers inside <1> are u32
+    #address-cells = <1>;
+    #size-cells = <0>;
+
+	fragment@0 {
+        reg = <0>;
+		target-path = "/";
+		__overlay__ {
+			hello_device {
+				compatible = "cotti,driver";
+				status = "okay";
+				label = "Hello";
+			};
+		};
+	};
+};
