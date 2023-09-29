@@ -1,0 +1,27 @@
+/// OLD SYNTAX. The DTC syntax was updated, so now the user doesn't have to
+/// type the "__overlay()__" metadata and stuff.
+/// This will be the only example that will remain of the old syntax.
+
+/dts-v1/;
+/plugin/;
+
+/ {
+    // Old syntax forced you to match the compatible and any properties listed here
+	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+    model = "TI AM335x BeagleBone Black";
+    #address-cells = <1>;
+    #size-cells = <0>;
+
+    // Old syntax made you create "fragment@<index>" nodes
+	fragment@0 {
+        reg = <0>;
+		target-path = "/";  // The path where the module would be inserted
+		__overlay__ {   // Metadata to indicate that the insertion starts from here
+			hello_device {
+				compatible = "cotti,driver";
+				status = "okay";
+				label = "Hello";
+			};
+		};
+	};
+};

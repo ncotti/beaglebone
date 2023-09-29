@@ -1,28 +1,15 @@
 /* First approach to device tree overlays.*/
 
-/dts-v1/;
-/plugin/;
+/dts-v1/;   // Version
+/plugin/;   // Needed to indicate that this is an OVERLAY, and not a raw device tree.
 
-/ {
-    // compatible should appear on every child node. The syntax is <manufacturer>,<model>
-    // Multiple values are accepted.
-	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
-
-    model = "TI AM335x BeagleBone Black";
-
-    // Numbers inside <1> are u32
-    #address-cells = <1>;
-    #size-cells = <0>;
-
-	fragment@0 {
-        reg = <0>;
-		target-path = "/";
-		__overlay__ {
-			hello_device {
-				compatible = "cotti,driver";
-				status = "okay";
-				label = "Hello";
-			};
-		};
-	};
+// &{<path_in_device_tree>} marks the insertion point for the device tree overlay.
+// Every element from a device tree can be referenced using a path notation like "/first_node/second_node"
+// In this example, we are inserting this code in the root folder "/", which corresponds with /proc/device-tree/
+&{/} {
+    hello_device {
+        compatible = "cotti,driver";
+        status = "okay";
+        label = "Hello";
+    };
 };

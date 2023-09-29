@@ -3,59 +3,49 @@
 /dts-v1/;
 /plugin/;
 
-/ {
-	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
-    model = "TI AM335x BeagleBone Black";
+// Insert on root path. The address is the same as the CPU address for child nodes
+&{/} {
     #address-cells = <1>;
-    #size-cells = <0>;
+    #size-cells = <1>;
 
-	fragment@0 {
-        reg = <0>;
-		target-path = "/";  // target on root path. The address is the same as the CPU address
-		__overlay__ {
+    root_device@0 {
+        reg = <0 0xf000>;
+        compatible = "cotti,driver";
+        status = "okay";
+        label = "Root mapping of registers";
+
+        // When ranges; is used, the child nodes will share the same address space than the parent,
+        // in this case, the address space of the whole CPU.
+        #address-cells = <1>;
+        #size-cells = <1>;
+        ranges;
+
+        child_device@1230 {
+            label = "Child device with CPU mapping";
+            reg = <0x1230 0x4000>;
+
+            // When ranges is used with values, then the parent address
+            // will be mapped to the child address.
+            // In this case, if you try to write any address from 0x8000 to 0x8fff of the CPU,
+            // you will be accessing the addresses 0x0000 to 0x0fff of the "sub_child_device".
+            // The third argument is the size of the block.
             #address-cells = <1>;
             #size-cells = <1>;
+            ranges = <0x8000 0x00 0x1000>;
 
-			root_device@0 {
-                reg = <0 0xf000>;
-				compatible = "cotti,driver";
-				status = "okay";
-				label = "Root mapping of registers";
+            sub_child_device@0 {
+                label = "Mapping 0x8000 CPU to 0x0000 dev";
+                reg = <0x00 0x1000>;
 
-                 // When ranges; is used, the child nodes will share the same address space than the parent,
-                 // in this case, the address space of the whole CPU.
+                // If "ranges" is ignored, then the child device won't
+                // be able to access the CPU memory space.
                 #address-cells = <1>;
-                #size-cells = <1>;
-                ranges;
+                #size-cells = <0>;
 
-                child_device@1230 {
-                    label = "Child device with CPU mapping";
-                    reg = <0x1230 0x4000>;
-
-                    // When ranges is used with values, then the parent address
-                    // will be mapped to the child address.
-                    // In this case, if you try to write any address from 0x8000 to 0x8fff of the CPU,
-                    // you will be accessing the addresses 0x0000 to 0x0fff of the "sub_child_device".
-                    // The third argument is the size of the block.
-                    #address-cells = <1>;
-                    #size-cells = <1>;
-                    ranges = <0x8000 0x00 0x1000>;
-
-                    sub_child_device@0 {
-                        label = "Mapping 0x8000 CPU to 0x0000 dev";
-                        reg = <0x00 0x1000>;
-
-                        // If "ranges" is ignored, then the child device won't
-                        // be able to access the CPU memory space.
-                        #address-cells = <1>;
-                        #size-cells = <0>;
-
-                        sub_sub_child_device@58 {
-                            reg = <58>;
-                        };
-                    };
+                sub_sub_child_device@58 {
+                    reg = <58>;
                 };
-			};
-		};
-	};
+            };
+        };
+    };
 };
