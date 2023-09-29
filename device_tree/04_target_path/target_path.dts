@@ -1,0 +1,41 @@
+/* Inserting multiple devices on different paths, which already existed in the
+* original device tree */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+    model = "TI AM335x BeagleBone Black";
+    #address-cells = <1>;
+    #size-cells = <0>;
+
+	fragment@0 {
+        reg = <0>;
+        // If the path already exists, the whole target is not overwritten.
+		target-path = "/chosen";
+		__overlay__ {
+            // This new properties get written in /proc/device-tree/chosen
+			new_property = "new";
+
+            // Already existing properties get overwritten when modified.
+            base_dtb_timestamp = "Sat Jan 1 11:22:33 2023";
+
+            // /proc/device-tree/chosen/overlays already exists aswell, it is not overwritten
+            overlays {
+                new_overlay = "new";
+            };
+		};
+	};
+
+    // Using two fragments. Both modifications are implemented in the device tree
+    fragment@1 {
+        reg = <1>;
+        target-path = "/leds/led5";
+        __overlay__{
+            // Overwrite property. You can see the changes on the device tree, or on
+            // /sys/class/leds/led_label_changed (prior was "beaglebone:green:usr3")
+            label = "led_label_changed";
+        };
+    };
+};
