@@ -1,0 +1,27 @@
+/* Understanding how GPIO are built in the device tree of the beaglebone, and how
+ * to modify it's deffault behavior */
+
+/dts-v1/;
+/plugin/;
+
+// Configure P9_12 (GPIO60) as a LED
+// You can see the device under /sys/class/leds/led_P9_12
+&{/leds/led_P9_12} {
+    status = "okay";
+    linux,default-trigger = "none";
+    gpios = <&gpio1 0x1c 0x00>;
+    default-state = "off";
+};
+
+// Configure P9_17 and P9_18 to function as i2c by default (instead of gpio)
+// Where are replacing the "default" behavior for the value found on "pinmux_P9_17_i2c_pin"
+// Check correct functionality by using ($ i2cdetect -y -r 1) (should execute fast)
+&am33xx_pinmux {
+    pinmux_P9_17_default_pin {
+        pinctrl-single,pins = <0x15c 0x32>;
+    };
+
+    pinmux_P9_18_default_pin {
+        pinctrl-single,pins = <0x158 0x32>;
+    };
+};
