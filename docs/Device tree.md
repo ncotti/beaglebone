@@ -136,3 +136,7 @@ After rebooting, the overlay should be added. You can check it
 [Good stuff](https://takeofftechnical.com/beaglebone-black-led-control/)
 
 https://elinux.org/Device_Tree_Usage
+
+https://github.com/beagleboard/BeagleBoard-DeviceTrees/tree/v5.10.x-ti-unified/src/arm/overlays
+
+https://elinux.org/Device_Tree_Mysteries#Device_Tree_source

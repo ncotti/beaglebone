@@ -1,0 +1,17 @@
+/* Using phandles and labels to reference nodes */
+
+/dts-v1/;
+/plugin/;
+
+// Using the name defined in the __symbols__{} node
+&not_available{
+    alias-property = "alias";
+
+    // These two values are the same, check with "$ cat <filename> | xxd"
+    alias-phandle = <&ocp>;
+    alias-number = <0x1fd>;
+
+    // These can't be done, because we need the value for the property at compile time
+    // alias-path = &not_available;
+    // alias-phandle-from-path = <&{/ocp}>;
+};
