@@ -9,8 +9,9 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nicolas G. Cotti");
 MODULE_DESCRIPTION("A LKM to parse the device tree for a specific device and its properties");
 
-#define DRIVER_NAME "my_device_driver"  // Can be any name here
+#define DRIVER_NAME "cotti,driver"  // Can be any name here
 
-#define DT_COMPATIBLE "mydev"
+// Properties defined in the device tree
+#define DT_COMPATIBLE "cotti,driver"
 #define DT_PROPERTY_LABEL "label"
-#define DT_PROPERTY_MY_VALUE "my_value"
+#define DT_PROPERTY_MY_VALUE "my-value"

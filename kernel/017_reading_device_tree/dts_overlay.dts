@@ -1,25 +1,14 @@
-/* This is a very simple, barebone device tree overlay. */
+/* Simple device tree overlay. Creates a device in the root path of the DT */
 
-/dts-v1/;   // Device tree source version
-/plugin/;   // "plugin" indicates that this is an overlay, not a DTS base file
-/ {
-    /* This line checks for compatibility on the base device tree file that you want
-     * to overlay to.*/
-	compatible = "ti,am335x-bone-blackti,am335x-boneti,am33xx";
-	fragment@0 {
-        // This part checks where to put the overlay. Since target-path is "/", it will
-        // be put in "/proc/device-tree/"
-		target-path = "/";
-		__overlay__ {
-            // Actual definition of the overlay
-			my_device {
-                // Properties for the device "/proc/device-tree/my_device".
-                // This appear as files in that folder
-				compatible = "mydev";   // This line is used to associate the device to its driver, in this case "mydev".
-				status = "okay";
-				label = "Test";
-				my_value = <12>;
-			};
-		};
-	};
+/dts-v1/;
+/plugin/;
+
+&{/} {
+    my_device {
+        // Properties for the device "/proc/device-tree/my_device". They appear as files in that folder
+        compatible = "cotti,driver";   // This line is used to associate the device to its driver.
+        status = "okay";
+        label = "Test";
+        my-value = <12>;
+    };
 };
