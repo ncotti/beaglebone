@@ -19,11 +19,16 @@ MODULE_DESCRIPTION("Configure a GPIO directly from the device tree. TODO this mo
 #define MINOR_NUMBER 0
 #define NUMBER_OF_DEVICES 1
 
-#define DRIVER_NAME "my_device_driver"  // Can be any name here
+#define DRIVER_NAME "cotti,driver"  // Can be any name here
 
-#define DT_COMPATIBLE "mydev"
+#define DT_COMPATIBLE "cotti,driver"
 #define DT_PROPERTY_LABEL "label"
-#define DT_PROPERTY_MY_VALUE "my_value"
-#define DT_PROPERTY_GPIO "green-led-gpio"
+#define DT_PROPERTY_MY_VALUE "my-value"
+#define DT_PROPERTY_GPIO "green-led-gpios"
+
+// It's really important to NOT include the "-gpio" in the name here
+// https://www.kernel.org/doc/Documentation/driver-api/gpio/board.rst
+// The function gpiod_get() appends the "-gpio" or "-gpios".
+#define DT_PROPERTY_GPIO_WITHOUT_POSTFIX "green-led"
 
 #define BASE_10 10

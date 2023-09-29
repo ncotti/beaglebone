@@ -2,21 +2,13 @@
 
 /dts-v1/;
 /plugin/;
-/ {
-	compatible = "ti,am335x-bone-blackti,am335x-boneti,am33xx";
-	fragment@0 {
-		target-path = "/";
-		__overlay__ {
-			my_device {
-				compatible = "mydev";
-				status = "okay";
-				label = "Test";
-				my_value = <12>;
-                /* The "&" is called a pthread. Is a reference to another node. In the base DTS, you have the structure
-                 * s */
-                // TODO can't get the correct device here
-                green-led-gpio = <0x42 0x1c 0x00>;
-			};
-		};
-	};
+
+&{/} {
+    my_device {
+        compatible = "cotti,driver";
+        status = "okay";
+        label = "Test";
+        my-value = <12>;
+        green-led-gpios = <&gpio1 0x1c 0x00>;
+    };
 };

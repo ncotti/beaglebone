@@ -140,7 +140,8 @@ static int dt_probe(struct platform_device *pdev) {
     }
 
     // Init GPIO
-    if (IS_ERR(my_led = gpiod_get(dev, DT_PROPERTY_GPIO, GPIOD_OUT_LOW))) {
+    my_led = gpiod_get(dev, DT_PROPERTY_GPIO_WITHOUT_POSTFIX, GPIOD_OUT_LOW);
+    if (IS_ERR(my_led)) {
         printk("Couldn't set up the gpio\n");
         return -1 * IS_ERR(my_led);
     }
@@ -153,7 +154,6 @@ static int dt_remove(struct platform_device *pdev) {
     printk("Now I am in the remove function\n");
     return 0;
 }
-
 
 /******************************************************************************
  * File operations
