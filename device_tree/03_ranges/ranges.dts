@@ -25,13 +25,13 @@
             reg = <0x1230 0x4000>;
 
             // When ranges is used with values, then the parent address
-            // will be mapped to the child address.
+            // will be mapped to the child address. <child-bus-address parent-bus-address length>
             // In this case, if you try to write any address from 0x8000 to 0x8fff of the CPU,
             // you will be accessing the addresses 0x0000 to 0x0fff of the "sub_child_device".
             // The third argument is the size of the block.
             #address-cells = <1>;
             #size-cells = <1>;
-            ranges = <0x8000 0x00 0x1000>;
+            ranges = <0x00 0x8000 0x1000>;
 
             sub_child_device@0 {
                 label = "Mapping 0x8000 CPU to 0x0000 dev";
