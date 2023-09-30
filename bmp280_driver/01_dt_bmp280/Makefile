@@ -1,4 +1,8 @@
-obj-m += dt_bmp280.o
+obj-m += driver.o
+
+EXTRA_CFLAGS := -I$(src)/inc
+
+driver-objs := src/dt_bmp280.o src/char_device.o src/bmp280.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules
