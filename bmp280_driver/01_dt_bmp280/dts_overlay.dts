@@ -1,0 +1,43 @@
+/* This is a very simple, barebone device tree overlay. */
+
+/dts-v1/;
+/plugin/;
+
+/* We will use the default driver for managing I2C, and add our device on top of it */
+&i2c1 {
+    #address-cells = <1>;
+    #size-cells = <0>;
+
+    // I2C device with slave address 0x76
+    my_i2c_device@76 {
+        reg = <0x76>;
+        compatible = "cotti,driver";
+        status = "okay";
+    };
+};
+
+/* Configure P9_17 and P9_18 to function as i2c by default (i2c1) */
+&am33xx_pinmux {
+    pinmux_P9_17_default_pin {
+        pinctrl-single,pins = <0x15c 0x32>;
+    };
+
+    pinmux_P9_18_default_pin {
+        pinctrl-single,pins = <0x158 0x32>;
+    };
+};
+
+/* Definition of the &i2c1 parent device (using driver "ti,ompa4-i2c") */
+// i2c@0 {
+//     compatible = "ti,omap4-i2c";
+//     #address-cells = <0x01>;
+//     #size-cells = <0x00>;
+//     reg = <0x00 0x1000>;
+//     interrupts = <0x47>;
+//     status = "okay";
+//     pinctrl-names = "default";
+//     pinctrl-0;
+//     clock-frequency = <0x186a0>;
+//     symlink = "bone/i2c/1";
+//     phandle = <0x24b>;
+// };
