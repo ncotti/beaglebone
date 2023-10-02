@@ -107,6 +107,7 @@ static int __init my_module_init(void) {
     dig_T1 = i2c_smbus_read_word_data(bmp280_i2c_client, 0x88);
     dig_T2 = i2c_smbus_read_word_data(bmp280_i2c_client, 0x8a);
     dig_T3 = i2c_smbus_read_word_data(bmp280_i2c_client, 0x8c);
+    printk("Calibration values: 0x%x 0x%x 0x%x\n", dig_T1, dig_T2, dig_T3);
 
     if(dig_T2 > 32767)
 		dig_T2 -= 65536;
@@ -116,7 +117,9 @@ static int __init my_module_init(void) {
 
     // Initialize device
     i2c_smbus_write_byte_data(bmp280_i2c_client, 0xf5, 0x5<<5);
+    printk("Wrote 0x%x to address 0x%x\n", 0x5<<5, 0xf5);
     i2c_smbus_write_byte_data(bmp280_i2c_client, 0xf4, (5<<5) | (5<<2) | (3<<0) );
+    printk("Wrote 0x%x to address 0x%x\n", (5<<5) | (5<<2) | (3<<0) , 0xf4);
     return 0;
 
 	i2c_client_error: i2c_unregister_device(bmp280_i2c_client);
@@ -195,6 +198,7 @@ s32 read_temperature(void) {
 	d2 = i2c_smbus_read_byte_data(bmp280_i2c_client, 0xFB);
 	d3 = i2c_smbus_read_byte_data(bmp280_i2c_client, 0xFC);
 	raw_temp = ((d1<<16) | (d2<<8) | d3) >> 4;
+    printk("Raw temp: 0x%x\n", raw_temp);
 
 	// Calculate temperature in degree
 	var1 = ((((raw_temp >> 3) - (dig_T1 << 1))) * (dig_T2)) >> 11;
