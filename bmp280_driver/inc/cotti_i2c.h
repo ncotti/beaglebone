@@ -16,7 +16,7 @@ irqreturn_t cotti_i2c_isr(int irq, void *devid);
 // Clock Manager Peripheral (CM_PER)
 #define CLOCK_BASE_ADDRESS 0x44E00000
 #define CLOCK_SIZE 0x400
-#define CLOCK_I2C2_OFFSET 0x44
+#define CLOCK_REG_I2C2  0x44
 #define CLOCK_I2C2_ENABLE 0x02
 
 // I2C2
@@ -50,8 +50,9 @@ irqreturn_t cotti_i2c_isr(int irq, void *devid);
 #define I2C_BIT_STOP            (1 << 1)
 #define I2C_BIT_START           (1 << 0)
 
-// Reset I2C configuration
-#define I2C_SYSC_VALUE           0x01
+#define I2C_BIT_RESET           (1 << 0)
+#define I2C_BIT_IDLEMODE        (1 << 3)
+#define I2C_BIT_CLKACTIVITY     (3 << 8)
 
 // I2C_CLOCK should be around 12MHZ. If the system clock is at 48MHz (PER_CLKOUTM2 / 4), "fsck",
 // and the clock is obtained as:
@@ -68,9 +69,6 @@ irqreturn_t cotti_i2c_isr(int irq, void *devid);
 //  t_low = 5.25us; t_high = 4.75us; and you have 100kbps exactly.
 #define I2C_SCLL_VALUE          53
 #define I2C_SCLH_VALUE          53
-
-#define I2C_CON_VALUE  (I2C_BIT_ENABLE | I2C_BIT_MASTER_MODE | I2C_BIT_TX)
-
 
 #define I2C_IRQ_XRDY    (1 << 4)
 #define I2C_IRQ_RRDY    (1 << 3)
