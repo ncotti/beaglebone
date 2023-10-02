@@ -55,17 +55,17 @@ int cotti_i2c_init(void) {
     // Disable I2C
     iowrite32(ioread32(i2c_ptr + I2C_REG_CON) & ~I2C_BIT_ENABLE, i2c_ptr + I2C_REG_CON);
 
-    // // Set reset
-    // iowrite32(I2C_SYSC_VALUE, i2c_ptr + I2C_REG_SYSC);
-    // iowrite32(I2C_BIT_ENABLE, i2c_ptr + I2C_REG_CON);   // If not enabled, the reset flag is not set
-    // if (!prv_is_resetting()) {
-    //     printk("Should be resetting!");
-    //     return -1;
-    // }
-    // do {
-    //     printk("Resetting...\n");
-    //     msleep(100);
-    // } while (prv_is_resetting());
+    // Set reset
+    iowrite32(I2C_SYSC_VALUE, i2c_ptr + I2C_REG_SYSC);
+    if (!prv_is_resetting()) {
+        printk("Should be resetting!");
+        return -1;
+    }
+    iowrite32(I2C_BIT_ENABLE, i2c_ptr + I2C_REG_CON);   // If not enabled, the reset flag is not set
+    do {
+        printk("Resetting...\n");
+        msleep(100);
+    } while (prv_is_resetting());
 
     iowrite32(0x00, i2c_ptr + I2C_REG_CON); // Disable
     printk("Reset complete!\n");
