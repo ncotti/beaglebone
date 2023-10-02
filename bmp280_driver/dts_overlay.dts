@@ -4,26 +4,30 @@
 /plugin/;
 
 /* We will use the default driver for managing I2C, and add our device on top of it */
-&i2c1 {
+&i2c2 {
     #address-cells = <1>;
     #size-cells = <0>;
+    compatible = "cotti,driver";
+    status = "okay";
+    label = "Test";
+    my-value = <12>;
 
-    // I2C device with slave address 0x76
-    my_i2c_device@76 {
-        reg = <0x76>;
-        compatible = "cotti,driver";
-        status = "okay";
-    };
+    // // I2C device with slave address 0x76
+    // my_i2c_device@76 {
+    //     reg = <0x76>;
+    //     compatible = "cotti,driver";
+    //     status = "okay";
+    // };
 };
 
-/* Configure P9_17 and P9_18 to function as i2c by default (i2c1) */
+/* Configure P9_21 and P9_22 to function as i2c by default (i2c2) */
 &am33xx_pinmux {
-    pinmux_P9_17_default_pin {
-        pinctrl-single,pins = <0x15c 0x32>;
+    pinmux_P9_21_default_pin {
+        pinctrl-single,pins = <0x154 0x32>;
     };
 
-    pinmux_P9_18_default_pin {
-        pinctrl-single,pins = <0x158 0x32>;
+    pinmux_P9_22_default_pin {
+        pinctrl-single,pins = <0x150 0x32>;
     };
 };
 

@@ -4,10 +4,12 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/types.h>
-#include <linux/i2c.h>
+#include <linux/delay.h>
+
+#include "cotti_i2c.h"
 
 s32 bmp280_read_temperature(void);
-int bmp280_init(struct i2c_client *client);
+int bmp280_init(void);
 
 #define I2C_SLAVE_ADDRESS 0x76
 #define ADDRESS_ID 0xD0

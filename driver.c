@@ -95,7 +95,7 @@ static irqreturn_t Mi_handler_interrupt(int irq){
 
 static int funcion_remove(struct platform_device * pdev){
 	printk(KERN_ALERT "\n  Entro a REMOVE \n");
-	free_irq(Host_Controller.irq,NULL);
+	//free_irq(Host_Controller.irq,NULL);
 	iounmap(Host_Controller.cm_per);
 	iounmap(Host_Controller.i2c2);
 	return 0;
