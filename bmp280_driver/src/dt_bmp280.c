@@ -62,6 +62,8 @@ static int dt_probe(struct platform_device *pdev) {
     struct device *dev = &pdev->dev;
     const char *label;
     int my_value, ret;
+    char out_string[50];
+    int temperature;
 
     // Check for device properties
     if (!device_property_present(dev, DT_PROPERTY_LABEL)) {
@@ -83,16 +85,6 @@ static int dt_probe(struct platform_device *pdev) {
     }
     printk("Label: %s\nMy value: %d\n", label, my_value);
 
-    if ((irq = platform_get_irq(pdev, 0)) < 0) {
-        printk("Couldn't get IRQ\n");
-        return irq;
-    }
-
-    // if ((ret = request_irq (irq, (irq_handler_t) cotti_i2c_isr ,IRQF_TRIGGER_RISING, pdev->name, NULL)) < 0) {
-    //     printk("Couldn't get IRQ from platform\n");
-    //     return ret;
-    // }
-
     printk("IRQ %d configured!\n", irq);
 
     if (char_device_create() != 0) {
@@ -101,6 +93,17 @@ static int dt_probe(struct platform_device *pdev) {
     if (cotti_i2c_init() != 0) {
         return -1;
     }
+
+    if ((irq = platform_get_irq(pdev, 0)) < 0) {
+        printk("Couldn't get IRQ\n");
+        return irq;
+    }
+
+    if ((ret = request_irq (irq, (irq_handler_t) cotti_i2c_isr ,IRQF_TRIGGER_RISING, pdev->name, NULL)) < 0) {
+        printk("Couldn't get IRQ from platform\n");
+        return ret;
+    }
+
     if (bmp280_init() != 0) {
         return -1;
     }
@@ -109,11 +112,15 @@ static int dt_probe(struct platform_device *pdev) {
     cotti_i2c_read(0x89), cotti_i2c_read(0x8a), cotti_i2c_read(0x8b),
     cotti_i2c_read(0x8c), cotti_i2c_read(0x8d), cotti_i2c_read(0x8e),
     cotti_i2c_read(0x8f), cotti_i2c_read(0x90), cotti_i2c_read(0x91));
+
+    temperature = bmp280_read_temperature();
+    snprintf(out_string, sizeof(out_string), "%d.%d\n", temperature/100, temperature%100);
+    printk("Temperature of the device: %s\n", out_string);
     return 0;
 }
 
 static int dt_remove(struct platform_device *pdev) {
-    //free_irq(irq, NULL);
+    free_irq(irq, NULL);
     char_device_remove();
     cotti_i2c_deinit();
     printk("Now I am in the remove function\n");

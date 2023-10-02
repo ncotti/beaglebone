@@ -29,7 +29,16 @@ int bmp280_init(void) {
     cotti_i2c_write((5<<5) | (5<<2) | (3<<0), 0xf4);
     printk("Wrote configuration correctly!\n");
 
+    // if ((kthread = kthread_run(thread_function, &arg_t2, "Thread_2")) == NULL) {
+    //     printk("Couldn't create second thread\n");
+    //     return -1;
+    // }
+
     return 0;
+}
+
+void bmp280_deinit(void) {
+
 }
 
 /// @brief Read current temperature from BMP280 sensor
@@ -39,6 +48,7 @@ s32 bmp280_read_temperature(void) {
     s32 raw_temp;
     s32 d1, d2, d3;
 
+    //cotti_i2c_reset();  // TODO remove
     // Read Temperature
 	d1 = cotti_i2c_read(0xFA);
 	d2 = cotti_i2c_read(0xFB);

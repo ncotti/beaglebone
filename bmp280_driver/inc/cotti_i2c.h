@@ -6,12 +6,18 @@
 #include <asm/io.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
+#include <linux/wait.h>
+#include <linux/sched.h>
+#include <linux/completion.h>
+#include <linux/jiffies.h>
 
 int cotti_i2c_init(void);
 void cotti_i2c_deinit(void);
 void cotti_i2c_write(u8 value, u8 address);
 u8 cotti_i2c_read(u8 address);
 irqreturn_t cotti_i2c_isr(int irq, void *devid);
+void cotti_i2c_test_irq(void);
+int cotti_i2c_reset(void);
 
 // Clock Manager Peripheral (CM_PER)
 #define CLOCK_BASE_ADDRESS 0x44E00000
@@ -50,7 +56,15 @@ irqreturn_t cotti_i2c_isr(int irq, void *devid);
 #define I2C_BIT_STOP            (1 << 1)
 #define I2C_BIT_START           (1 << 0)
 
-#define I2C_BIT_RESET           (1 << 0)
+// #define I2C_BIT_AUTOIDLE        (1 << 0)
+// #define I2C_BIT_RESET           (1 << 1)
+// #define I2C_BIT_WAKEUP          (1 << 2)
+// #define I2C_BIT_IDLEMODE        (2 << 3)
+// #define I2C_BIT_CLKACTIVITY     (2 << 8)
+
+#define I2C_BIT_AUTOIDLE        (1 << 0)
+#define I2C_BIT_RESET           (1 << 1)
+#define I2C_BIT_WAKEUP          (1 << 2)
 #define I2C_BIT_IDLEMODE        (1 << 3)
 #define I2C_BIT_CLKACTIVITY     (3 << 8)
 

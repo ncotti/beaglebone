@@ -100,7 +100,7 @@ static ssize_t char_device_write(struct file *file, const char *user_buffer, siz
 /// @brief Read data out of the buffer
 static ssize_t char_device_read(struct file *file, char *user_buffer, size_t count, loff_t *offs) {
     int to_copy, not_copied, delta;
-    char out_string[20];
+    char out_string[50];
     int temperature;
 
     // Get amount of data to copy
