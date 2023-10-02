@@ -101,9 +101,9 @@ static int dt_probe(struct platform_device *pdev) {
     if (cotti_i2c_init() != 0) {
         return -1;
     }
-    // if (bmp280_init() != 0) {
-    //     return -1;
-    // }
+    if (bmp280_init() != 0) {
+        return -1;
+    }
 
     printk("Values read: %x %x %x %x %x %x %x %x %x %x\n", cotti_i2c_read(0xD0),
     cotti_i2c_read(0x89), cotti_i2c_read(0x8a), cotti_i2c_read(0x8b),

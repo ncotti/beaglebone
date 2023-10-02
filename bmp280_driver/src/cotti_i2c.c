@@ -98,13 +98,45 @@ void cotti_i2c_deinit(void) {
 /// @param value Value to be written
 /// @param address Address of the device register
 void cotti_i2c_write(u8 value, u8 address) {
-    prv_tx_mode();
+    u32 w;
+    u8 i;
+    printk("Writing address: 0x%x with value 0x%x", address, value);
+    msleep(1);
+
+    // poll the bus busy
+    if (prv_is_busy()) {
+        printk("Bus is busy. Can't read\n");
+        prv_stop();
+        return;
+    }
+
+    // Amount of bytes to transfer
     prv_set_dcount(2);
+
+    // Clear fifo buffer
+    iowrite32(ioread32(i2c_ptr + I2C_REG_BUF) | I2C_BIT_RXFIFO_CLR | I2C_BIT_TXFIFO_CLR, i2c_ptr + I2C_REG_BUF);
+
+    w = I2C_BIT_ENABLE | I2C_BIT_MASTER_MODE | I2C_BIT_START | I2C_BIT_TX | I2C_BIT_STOP;
+    iowrite32(w, i2c_ptr + I2C_REG_CON);
+
+    // poll transmit data ready
+    if (!prv_transmit_data_ready()) {
+        printk("Transmission busy.\n");
+        prv_stop();
+        return;
+    }
     prv_write(address);
+    msleep(1);
+    i = 0;
+    while (!prv_transmit_data_ready()) {
+        printk("Waiting for data ready\n");
+        msleep(1);
+        if (i++ == 3) {
+            printk("ERROR on second byte transfer\n");
+            return;
+        }
+    }
     prv_write(value);
-    prv_start();
-    msleep(100);
-    prv_stop();
 }
 
 /// @brief Read a value from the I2C bus.
@@ -114,6 +146,7 @@ u8 cotti_i2c_read(u8 address) {
     u8 read;
     u32 w;
     printk("Reading address: 0x%x\n", address);
+    msleep(1);
 
     // poll the bus busy
     if (prv_is_busy()) {
