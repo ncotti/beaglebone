@@ -18,6 +18,7 @@ u8 cotti_i2c_read(u8 address);
 irqreturn_t cotti_i2c_isr(int irq, void *devid);
 void cotti_i2c_test_irq(void);
 int cotti_i2c_reset(void);
+void cotti_i2c_wakeup(void);
 
 // Clock Manager Peripheral (CM_PER)
 #define CLOCK_BASE_ADDRESS 0x44E00000

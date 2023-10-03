@@ -8,7 +8,6 @@ int bmp280_init(void) {
 
     // Read ID
     printk("First I2C read\n");
-    msleep(1000);
     bmp280_id = cotti_i2c_read(ADDRESS_ID);
     printk("ID: 0x%x\n", bmp280_id);
 

@@ -32,6 +32,12 @@ DECLARE_COMPLETION(comp_write);
 
 static u8 g_read = 0;
 static u8 g_write = 0;
+static u8 g_value = 0;
+static u8 len = 0;
+
+void cotti_i2c_wakeup(void) {
+    iowrite32(CLOCK_I2C2_ENABLE, clk_ptr + CLOCK_REG_I2C2);
+}
 
 void cotti_i2c_test_irq(void) {
     printk("TEST1: reading ID\n");
@@ -61,12 +67,20 @@ irqreturn_t cotti_i2c_isr(int irq_number, void *dev_id) {
             printk("NACK\n");
         } if (irq & I2C_IRQ_RRDY) {
             printk("RRDY\n");
+            len--;
             g_read = prv_read();
-            complete(&comp_read);
+            if (!len) {
+                complete(&comp_read);
+            }
         } if (irq & I2C_IRQ_XRDY) {
             printk("XRDY\n");
-            prv_write(g_write);
-            complete(&comp_write);
+            len--;
+            if (len == 1) {
+                prv_write(g_write);
+            } else if (!len) {
+                prv_write(g_value);
+                complete(&comp_write);
+            }
         }
         iowrite16(irq, i2c_ptr + I2C_REG_IRQSTATUS);
         //printk("IRQ after handled: 0x%x\n", ioread16(i2c_ptr + I2C_REG_IRQSTATUS));
@@ -125,7 +139,7 @@ int cotti_i2c_init(void) {
         printk(KERN_ERR "Couldn't configure Clock Manager Peripheral\n");
         return -1;
     }
-    iowrite32(CLOCK_I2C2_ENABLE, clk_ptr + CLOCK_REG_I2C2);
+    cotti_i2c_wakeup();
 
     //I2C2 configuration
     if((i2c_ptr = ioremap(I2C2_BASE_ADDRESS, I2C2_SIZE)) == NULL) {
@@ -179,22 +193,18 @@ void cotti_i2c_write(u8 value, u8 address) {
     }
 
     // Amount of bytes to transfer
+    len = 2;
     iowrite32(2, i2c_ptr + I2C_REG_CNT);
 
     // Clear fifo buffer
     prv_set_bit(i2c_ptr + I2C_REG_BUF, I2C_BIT_RXFIFO_CLR | I2C_BIT_TXFIFO_CLR);
 
     g_write = address;
+    g_value = value;
     iowrite32(I2C_BIT_ENABLE | I2C_BIT_MASTER_MODE | I2C_BIT_START |
         I2C_BIT_TX | I2C_BIT_STOP, i2c_ptr + I2C_REG_CON);
 
     // poll transmit data ready
-    if (wait_for_completion_timeout(&comp_write, msecs_to_jiffies(100)) == 0){
-        printk("Timeout reached!\n");
-        return;
-    }
-    reinit_completion(&comp_write);
-    g_write = value;
     if (wait_for_completion_timeout(&comp_write, msecs_to_jiffies(100)) == 0){
         printk("Timeout reached!\n");
         return;
@@ -220,12 +230,13 @@ u8 cotti_i2c_read(u8 address) {
     }
 
     // Amount of bytes to transfer
+    len = 1;
     iowrite32(1, i2c_ptr + I2C_REG_CNT);
 
     // Clear fifo buffer
     prv_set_bit(i2c_ptr + I2C_REG_BUF, I2C_BIT_RXFIFO_CLR | I2C_BIT_TXFIFO_CLR);
 
-    g_write = address;
+    g_value = address;
     // Enable TX
     iowrite32(I2C_BIT_ENABLE | I2C_BIT_MASTER_MODE | I2C_BIT_START |
         I2C_BIT_TX | I2C_BIT_STOP, i2c_ptr + I2C_REG_CON);
@@ -239,6 +250,7 @@ u8 cotti_i2c_read(u8 address) {
     msleep(10);
 
     // Set RX 1 byte
+    len = 1;
     iowrite32(1, i2c_ptr + I2C_REG_CNT);
     iowrite32(I2C_BIT_ENABLE | I2C_BIT_MASTER_MODE | I2C_BIT_START |
         I2C_BIT_STOP, i2c_ptr + I2C_REG_CON);

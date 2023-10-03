@@ -107,6 +107,7 @@ static ssize_t char_device_read(struct file *file, char *user_buffer, size_t cou
     to_copy = min(count, sizeof(out_string));
 
     // Get temperature
+    cotti_i2c_wakeup();
     temperature = bmp280_read_temperature();
     snprintf(out_string, sizeof(out_string), "%d.%d\n", temperature/100, temperature%100);
     printk("Temperature of the device: %s\n", out_string);
