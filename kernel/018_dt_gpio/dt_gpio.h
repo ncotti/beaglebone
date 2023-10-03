@@ -12,7 +12,7 @@
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nicolas G. Cotti");
-MODULE_DESCRIPTION("Configure a GPIO directly from the device tree. TODO this module is incomplete");
+MODULE_DESCRIPTION("Configure a GPIO directly from the device tree.");
 
 #define DEVICE_NAME "dt_gpio_driver"
 #define DEVICE_CLASS_NAME "cotti"
