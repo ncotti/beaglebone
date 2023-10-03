@@ -25,6 +25,7 @@ irqreturn_t cotti_i2c_isr(int irq, void *devid);
 #define CLOCK_SIZE          0x400   // 1KB
 #define CLOCK_REG_I2C2      0x44
 #define CLOCK_I2C2_ENABLE   0x02
+#define CLOCK_IDLEST        (0x3 << 16)
 
 // IO pin multiplexing
 #define CONTROL_MODULE_BASE_ADDRESS     0x44E10000
@@ -67,9 +68,9 @@ irqreturn_t cotti_i2c_isr(int irq, void *devid);
 
 #define I2C_BIT_AUTOIDLE        (1 << 0)
 #define I2C_BIT_RESET           (1 << 1)
-#define I2C_BIT_WAKEUP          (1 << 2)
-#define I2C_BIT_IDLEMODE        (2 << 3)
-#define I2C_BIT_CLKACTIVITY     (2 << 8)
+#define I2C_BIT_WAKEUP          (1 << 2)    // Enable own wakeup
+#define I2C_BIT_NOIDLE          (1 << 3)    // No idle
+#define I2C_BIT_CLKACTIVITY     (3 << 8)    // Both clocks active
 
 // I2C_CLOCK should be around 12MHZ. If the system clock is at 48MHz (PER_CLKOUTM2 / 4), "fsck",
 // and the clock is obtained as:

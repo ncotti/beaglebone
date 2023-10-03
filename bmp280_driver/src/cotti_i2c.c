@@ -23,13 +23,16 @@ DEFINE_MUTEX(lock_bus);
 
 // Buffer for read and written values, as well as length of transaction
 static u8 g_read = 0;
-static u8 g_write[2] = {0,0};   // Utmost value is written first
+static u8 g_write[2] = {0,0};   // Upper value is written first
 static u16 g_len = 0;
 
 /******************************************************************************
  * Static functions' prototypes
 ******************************************************************************/
 
+static inline u32 prv_is_clock_disabled(void) {
+    return ioread32(clk_ptr + CLOCK_REG_I2C2) & (CLOCK_IDLEST);
+}
 static inline void prv_set_bit(void* addr, u32 bit) {
     iowrite32(ioread32(addr) | bit, addr);
 }
@@ -48,17 +51,9 @@ static inline u8 prv_read(void) {
 static inline u8 prv_is_irq_triggered(u16 irq) {
     return ioread16(i2c_ptr + I2C_REG_IRQSTATUS) & irq;
 }
-static inline void prv_wakeup(void) {
-    iowrite32(CLOCK_I2C2_ENABLE, clk_ptr + CLOCK_REG_I2C2);
-}
 
-/// @brief Set the amount of bytes to read or write to the i2c bus, excluding
-///  the slave address
-static inline void prv_set_count(u16 count) {
-    g_len = (count <= 2) ? count : 2;
-    iowrite16(count, i2c_ptr + I2C_REG_CNT);
-}
-
+static void prv_set_count(u16 count);
+static void prv_wakeup(void);
 static int prv_reset_i2c(void);
 static int prv_wait_for_bus_busy(void);
 
@@ -117,9 +112,9 @@ int cotti_i2c_init(void) {
         goto i2c_error;
     }
 
-    // Smart idle
-    iowrite32(I2C_BIT_CLKACTIVITY | I2C_BIT_IDLEMODE | I2C_BIT_WAKEUP |
-        I2C_BIT_AUTOIDLE, i2c_ptr + I2C_REG_SYSC);
+    // No idle, clocks always active, wakeup enable
+    iowrite32(I2C_BIT_CLKACTIVITY | I2C_BIT_NOIDLE | I2C_BIT_WAKEUP,
+        i2c_ptr + I2C_REG_SYSC);
 
     // Configure clock
     iowrite8(I2C_PSC_VALUE, i2c_ptr + I2C_REG_PSC);
@@ -197,7 +192,6 @@ int cotti_i2c_write(u8 value, u8 address) {
 /// @return Value read.
 int cotti_i2c_read(u8 address) {
     prv_wakeup();
-    msleep(1);  // TODO, delay need for I2C wakeup
 
     if (prv_wait_for_bus_busy() != 0) {
         return -1;
@@ -247,6 +241,13 @@ int cotti_i2c_read(u8 address) {
  * I2C private operations
 ******************************************************************************/
 
+/// @brief Wakeup the I2C2 clock. The OS might put the I2C clock to sleep, so
+///  re-enable the clock just in case.
+static void prv_wakeup(void) {
+    iowrite32(CLOCK_I2C2_ENABLE, clk_ptr + CLOCK_REG_I2C2);
+    while(prv_is_clock_disabled());
+}
+
 /// @brief Wait until teh bus is freed.
 /// @return "0" if the bus is free. "-1" on timeout.
 static int prv_wait_for_bus_busy(void) {
@@ -261,6 +262,8 @@ static int prv_wait_for_bus_busy(void) {
     return 0;
 }
 
+/// @brief Reset the I2C2 registers to power up state.
+/// @return "0" on success, "-1" on error
 static int prv_reset_i2c(void) {
     u8 i = 0;
     prv_clear_bit(i2c_ptr + I2C_REG_CON, I2C_BIT_ENABLE);
@@ -277,3 +280,9 @@ static int prv_reset_i2c(void) {
     return 0;
 }
 
+/// @brief Set the amount of bytes to read or write to the i2c bus, excluding
+///  the slave address
+static void prv_set_count(u16 count) {
+    g_len = (count <= 2) ? count : 2;
+    iowrite16(count, i2c_ptr + I2C_REG_CNT);
+}
