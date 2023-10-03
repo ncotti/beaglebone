@@ -21,15 +21,15 @@
 };
 
 /* Configure P9_21 and P9_22 to function as i2c by default (i2c2) */
-&am33xx_pinmux {
-    pinmux_P9_21_default_pin {
-        pinctrl-single,pins = <0x154 0x32>;
-    };
+// &am33xx_pinmux {
+//     pinmux_P9_21_default_pin {
+//         pinctrl-single,pins = <0x154 0x32>;
+//     };
 
-    pinmux_P9_22_default_pin {
-        pinctrl-single,pins = <0x150 0x32>;
-    };
-};
+//     pinmux_P9_22_default_pin {
+//         pinctrl-single,pins = <0x150 0x32>;
+//     };
+// };
 
 /* Definition of the &i2c1 parent device (using driver "ti,ompa4-i2c") */
 // i2c@0 {

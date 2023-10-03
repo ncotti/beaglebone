@@ -4,8 +4,10 @@
  * Static variables
 ******************************************************************************/
 
+// Pointers to memory mapped registers of the CPU
 static void* i2c_ptr = NULL;
 static void* clk_ptr = NULL;
+static void* control_module_ptr = NULL;
 
 // Used to signal from the IRQ that a data was received from the i2c bus
 DECLARE_COMPLETION(comp_read);
@@ -96,10 +98,18 @@ int cotti_i2c_init(void) {
         printk(KERN_ERR "Couldn't configure Clock Manager Peripheral\n");
         return -1;
     }
-    if((i2c_ptr = ioremap(I2C2_BASE_ADDRESS, I2C2_SIZE)) == NULL) {
+    if((control_module_ptr = ioremap(CONTROL_MODULE_BASE_ADDRESS, CONTROL_MODULE_SIZE)) == NULL) {
         printk(KERN_ERR "Couldn't configure I2C2\n");
         goto clock_error;
     }
+    if((i2c_ptr = ioremap(I2C2_BASE_ADDRESS, I2C2_SIZE)) == NULL) {
+        printk(KERN_ERR "Couldn't configure I2C2\n");
+        goto pin_mux_error;
+    }
+
+    // Configure P9.21 and P9.22 pinmux as I2C
+    iowrite32(CONTROL_MODULE_PINMUX_P9_21_I2C, control_module_ptr + CONTROL_MODULE_REG_P9_21);
+    iowrite32(CONTROL_MODULE_PINMUX_P9_22_I2C, control_module_ptr + CONTROL_MODULE_REG_P9_22);
 
     prv_wakeup();
 
@@ -131,6 +141,7 @@ int cotti_i2c_init(void) {
     return 0;
 
     i2c_error: iounmap(i2c_ptr);
+    pin_mux_error: iounmap(control_module_ptr);
     clock_error: iounmap(clk_ptr);
     i2c_ptr = NULL;
     clk_ptr = NULL;
@@ -141,8 +152,9 @@ int cotti_i2c_init(void) {
 void cotti_i2c_deinit(void) {
     if (clk_ptr != NULL) {
         iounmap(clk_ptr);
-    }
-    if (i2c_ptr != NULL) {
+    } if (control_module_ptr != NULL) {
+        iounmap(control_module_ptr);
+    } if (i2c_ptr != NULL) {
         iounmap(i2c_ptr);
     }
 }

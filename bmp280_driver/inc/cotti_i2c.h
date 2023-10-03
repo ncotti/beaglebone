@@ -21,10 +21,18 @@ irqreturn_t cotti_i2c_isr(int irq, void *devid);
 #define TIMEOUT_READ_WRITE 100  // msec
 
 // Clock Manager Peripheral (CM_PER)
-#define CLOCK_BASE_ADDRESS 0x44E00000
-#define CLOCK_SIZE 0x400
-#define CLOCK_REG_I2C2  0x44
-#define CLOCK_I2C2_ENABLE 0x02
+#define CLOCK_BASE_ADDRESS  0x44E00000
+#define CLOCK_SIZE          0x400   // 1KB
+#define CLOCK_REG_I2C2      0x44
+#define CLOCK_I2C2_ENABLE   0x02
+
+// IO pin multiplexing
+#define CONTROL_MODULE_BASE_ADDRESS     0x44E10000
+#define CONTROL_MODULE_SIZE             0x20000 // 128KB
+#define CONTROL_MODULE_REG_P9_21        0x954
+#define CONTROL_MODULE_REG_P9_22        0x950
+#define CONTROL_MODULE_PINMUX_P9_21_I2C 0x32  // Pullup, MUX mode 2, receiver
+#define CONTROL_MODULE_PINMUX_P9_22_I2C 0x32  // Pullup, MUX mode 2, receiver
 
 // I2C2
 #define I2C2_BASE_ADDRESS   0x4819C000
