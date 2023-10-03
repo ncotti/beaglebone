@@ -10,15 +10,15 @@
 #include <linux/sched.h>
 #include <linux/completion.h>
 #include <linux/jiffies.h>
+#include <linux/mutex.h>
 
 int cotti_i2c_init(void);
 void cotti_i2c_deinit(void);
-void cotti_i2c_write(u8 value, u8 address);
-u8 cotti_i2c_read(u8 address);
+int cotti_i2c_write(u8 value, u8 address);
+int cotti_i2c_read(u8 address);
 irqreturn_t cotti_i2c_isr(int irq, void *devid);
-void cotti_i2c_test_irq(void);
-int cotti_i2c_reset(void);
-void cotti_i2c_wakeup(void);
+
+#define TIMEOUT_READ_WRITE 100  // msec
 
 // Clock Manager Peripheral (CM_PER)
 #define CLOCK_BASE_ADDRESS 0x44E00000
@@ -57,17 +57,11 @@ void cotti_i2c_wakeup(void);
 #define I2C_BIT_STOP            (1 << 1)
 #define I2C_BIT_START           (1 << 0)
 
-// #define I2C_BIT_AUTOIDLE        (1 << 0)
-// #define I2C_BIT_RESET           (1 << 1)
-// #define I2C_BIT_WAKEUP          (1 << 2)
-// #define I2C_BIT_IDLEMODE        (2 << 3)
-// #define I2C_BIT_CLKACTIVITY     (2 << 8)
-
 #define I2C_BIT_AUTOIDLE        (1 << 0)
 #define I2C_BIT_RESET           (1 << 1)
 #define I2C_BIT_WAKEUP          (1 << 2)
-#define I2C_BIT_IDLEMODE        (1 << 3)
-#define I2C_BIT_CLKACTIVITY     (3 << 8)
+#define I2C_BIT_IDLEMODE        (2 << 3)
+#define I2C_BIT_CLKACTIVITY     (2 << 8)
 
 // I2C_CLOCK should be around 12MHZ. If the system clock is at 48MHz (PER_CLKOUTM2 / 4), "fsck",
 // and the clock is obtained as:
@@ -85,6 +79,7 @@ void cotti_i2c_wakeup(void);
 #define I2C_SCLL_VALUE          53
 #define I2C_SCLH_VALUE          53
 
+#define I2C_IRQ_BB      (1 << 12)
 #define I2C_IRQ_XRDY    (1 << 4)
 #define I2C_IRQ_RRDY    (1 << 3)
 #define I2C_IRQ_ARDY    (1 << 2)

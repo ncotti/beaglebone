@@ -47,7 +47,6 @@ s32 bmp280_read_temperature(void) {
     s32 raw_temp;
     s32 d1, d2, d3;
 
-    //cotti_i2c_reset();  // TODO remove
     // Read Temperature
 	d1 = cotti_i2c_read(0xFA);
 	d2 = cotti_i2c_read(0xFB);
