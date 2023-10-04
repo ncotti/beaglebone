@@ -7,16 +7,21 @@
 #include <linux/fs.h>
 #include <linux/cdev.h>
 #include <linux/uaccess.h>
-
+#include <linux/string.h>
+#include <linux/slab.h>
 #include "bmp280.h"
 #include "log.h"
 
-#define DEVICE_NAME "dt_i2c_driver"
-#define DEVICE_CLASS_NAME "cotti"
-#define MINOR_NUMBER 0
-#define NUMBER_OF_DEVICES 1
-
-int char_device_create(void);
+int char_device_create(const char *name);
 void char_device_remove(void);
+
+// This value can be used by "udev" rules. Check for 'SUBSYSTEM=="cotti"'.
+#define DEVICE_CLASS_NAME "cotti"
+
+// Minimum minor number that can be used.
+#define MINOR_NUMBER 0
+
+// Amount of devices that will be created
+#define NUMBER_OF_DEVICES 1
 
 #endif // CHAR_DEVICE_H

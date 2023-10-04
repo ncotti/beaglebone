@@ -19,4 +19,7 @@ MODULE_DESCRIPTION("This module initializes the I2C2 bus interface based on a "
 // Value of the property "compatible" to match this driver
 #define DT_COMPATIBLE "cotti,i2c"
 
+// Name of the character device. It will be seen as /dev/<DEVICE_NAME>
+#define DEVICE_NAME "temp-sensor"
+
 #endif // TEMP_SENSOR_H

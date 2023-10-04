@@ -13,6 +13,7 @@ static ssize_t char_device_read(struct file *file, char *user_buffer, size_t cou
  * Static variables
 ******************************************************************************/
 
+static char* device_name = NULL;
 static dev_t device_number;
 static struct class *device_class;
 static struct cdev my_device;
@@ -29,14 +30,22 @@ static struct file_operations fops = {
 ******************************************************************************/
 
 /// @brief Creates the char device
+/// @param name Name of the device. It'll be seen as "/dev/<name>"
 /// @return "0"on success, non zero error code on error.
-int char_device_create(void) {
+int char_device_create(const char *name) {
     int retval = -1;
 
+    // Get own copy of name
+    if ((device_name = kmalloc(strlen(name) + 1, GFP_KERNEL)) == NULL) {
+        printk(ERROR("Out of memory for char device.\n"));
+        goto name_error;
+    }
+    strcpy(device_name, name);
+
     // Allocate device number (MAJOR and MINOR)
-    if ((retval = alloc_chrdev_region(&device_number, MINOR_NUMBER, NUMBER_OF_DEVICES, DEVICE_NAME)) != 0) {
+    if ((retval = alloc_chrdev_region(&device_number, MINOR_NUMBER, NUMBER_OF_DEVICES, device_name)) != 0) {
         printk(ERROR("Couldn't allocate device number.\n"));
-        goto chrdev_error;
+        goto kmalloc_error;
     }
 
     // Create device class (This name will be seen as SUBSYSTEM=="DEVICE_CLASS_NAME"
@@ -44,38 +53,40 @@ int char_device_create(void) {
     if ((device_class = class_create(THIS_MODULE, DEVICE_CLASS_NAME)) == NULL) {
         printk(ERROR("Device class couldn't be created.\n"));
         retval = -1;
-        goto class_error;
+        goto chrdev_error;
     }
 
-    // Create device file (/sys/class/DEVICE_CLASS_NAME/DEVICE_NAME)
-    if (device_create(device_class, NULL, device_number, NULL, DEVICE_NAME) == NULL) {
+    // Create device file (/sys/class/<DEVICE_CLASS_NAME>/<name>)
+    if (device_create(device_class, NULL, device_number, NULL, device_name) == NULL) {
         printk(ERROR("Couldn't create device file.\n"));
         retval = -1;
-        goto device_error;
+        goto class_error;
     }
 
     // Initializing and registering device file
     cdev_init(&my_device, &fops);
     if ((retval = cdev_add(&my_device, device_number, NUMBER_OF_DEVICES)) != 0 ) {
         printk(ERROR("Registering of device to kernel failed.\n"));
-        goto cdev_error;
+        goto device_error;
     }
 
     printk(INFO("Device /dev/%s created successfully. Major: %d, Minor: %d.\n"),
-        DEVICE_NAME, MAJOR(device_number), MINOR(device_number));
+        device_name, MAJOR(device_number), MINOR(device_number));
     return 0;
 
-    cdev_error: device_destroy(device_class, device_number);
-    device_error: class_destroy(device_class);
-    class_error: unregister_chrdev(device_number, DEVICE_NAME);
-    chrdev_error: return retval;
+    device_error: device_destroy(device_class, device_number);
+    class_error: class_destroy(device_class);
+    chrdev_error: unregister_chrdev(device_number, device_name);
+    kmalloc_error: kfree(device_name);
+    name_error: return retval;
 }
 
 /// @brief Remove previously created device.
 void char_device_remove(void) {
     device_destroy(device_class, device_number);
     class_destroy(device_class);
-    unregister_chrdev(device_number, DEVICE_NAME);
+    unregister_chrdev(device_number, device_name);
+    kfree(device_name);
 }
 
 /******************************************************************************

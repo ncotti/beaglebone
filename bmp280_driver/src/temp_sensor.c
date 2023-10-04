@@ -72,7 +72,7 @@ static int driver_probe(struct platform_device *pdev) {
     if ((retval = bmp280_init()) != 0) {
         goto i2c_error;
     }
-    if ((retval = char_device_create()) != 0) {
+    if ((retval = char_device_create(DEVICE_NAME)) != 0) {
         goto bmp280_error;
     }
     return 0;
