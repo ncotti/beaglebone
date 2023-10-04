@@ -1,4 +1,4 @@
-#include "temp_sensor.h"
+#include "driver.h"
 
 /******************************************************************************
  * Static functions' prototypes
