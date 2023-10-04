@@ -10,6 +10,7 @@
 
 s32 bmp280_read_temperature(void);
 int bmp280_init(void);
+void bmp280_deinit(void);
 
 #define I2C_SLAVE_ADDRESS 0x76
 #define ADDRESS_ID 0xD0

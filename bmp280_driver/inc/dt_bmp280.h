@@ -1,23 +1,19 @@
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/mod_devicetable.h>
-#include <linux/property.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
-#include <linux/of_irq.h>
-
 #include "char_device.h"
 #include "bmp280.h"
 #include "cotti_i2c.h"
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Nicolas G. Cotti");
-MODULE_DESCRIPTION("Configure an I2C device on top of the default I2C driver, "
-"using the device tree.");
+MODULE_AUTHOR("Nicolas Gabriel Cotti");
+MODULE_DESCRIPTION("This module initializes the I2C2 bus interface based on a "
+"device tree overlay, and then sets up a character device in the /dev/ "
+"directory to read and configure the temperature sensor BMP280.");
 
-#define DRIVER_NAME "cotti,driver"  // Can be any name here
+// Can be any name here
+#define DRIVER_NAME "cotti-temp-sensor"
 
-#define DT_COMPATIBLE "cotti,driver"
-#define DT_PROPERTY_LABEL "label"
-#define DT_PROPERTY_MY_VALUE "my-value"
-#define DT_PROPERTY_CLOCK_FREQ "clock-frequency"
+// Value of the property "compatible" to match this driver
+#define DT_COMPATIBLE "cotti,i2c"

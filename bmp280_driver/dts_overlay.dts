@@ -11,7 +11,7 @@
 &i2c2 {
     #address-cells = <1>;
     #size-cells = <0>;
-    compatible = "cotti,driver";
+    compatible = "cotti,i2c";
     status = "okay";
     pinmux = <&am33xx_pinmux>;              // phandle to pin mux
     pins = <0x154 0x32 0x150 0x32>;         // <PIN_OFFSET PIN_MODE>
