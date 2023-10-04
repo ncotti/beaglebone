@@ -9,6 +9,7 @@
 #include <linux/uaccess.h>
 
 #include "bmp280.h"
+#include "log.h"
 
 #define DEVICE_NAME "dt_i2c_driver"
 #define DEVICE_CLASS_NAME "cotti"

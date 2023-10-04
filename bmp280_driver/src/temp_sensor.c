@@ -34,11 +34,11 @@ static struct platform_driver my_driver = {
 
 /// @brief This function is called when the module is loaded into the kernel.
 static int __init my_module_init(void) {
-    printk("Initializing LKM %s\n", DRIVER_NAME);
+    printk(INFO("Initializing LKM.\n"));
 
     // Register driver
     if(platform_driver_register(&my_driver) != 0) {
-        printk(KERN_ERR "Couldn't load driver\n");
+        printk(ERROR("Couldn't load driver.\n"));
         return -1;
     }
     return 0;
@@ -46,7 +46,7 @@ static int __init my_module_init(void) {
 
 /// @brief This function is called when the module is removed from the kernel.
 static void __exit my_module_exit(void) {
-    printk("Removing LKM %s\n", DRIVER_NAME);
+    printk(INFO("Removing LKM.\n"));
     platform_driver_unregister(&my_driver);
 }
 
@@ -65,7 +65,7 @@ module_exit(my_module_exit);
 static int driver_probe(struct platform_device *pdev) {
     int retval = -1;
 
-    printk("Installing driver for %s\n", pdev->name);
+    printk(INFO("Installing driver for %s.\n"), pdev->name);
     if ((retval = cotti_i2c_init(pdev)) != 0) {
         goto base_error;
     }
@@ -87,7 +87,7 @@ static int driver_probe(struct platform_device *pdev) {
 /// @param pdev Reference to the device tree.
 /// @return "0" on success, not "0" on error.
 static int driver_remove(struct platform_device *pdev) {
-    printk("Now I am in the remove function\n");
+    printk(INFO("Removing driver for %s.\n"), pdev->name);
     char_device_remove();
     bmp280_deinit();
     cotti_i2c_deinit();

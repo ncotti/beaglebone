@@ -19,6 +19,7 @@
 #include <linux/of_address.h>
 #include <linux/of_clk.h>
 #include <linux/clk.h>
+#include "log.h"
 
 int cotti_i2c_init(struct platform_device *pdev);
 void cotti_i2c_deinit(void);

@@ -7,6 +7,7 @@
 #include <linux/delay.h>
 
 #include "cotti_i2c.h"
+#include "log.h"
 
 s32 bmp280_read_temperature(void);
 int bmp280_init(void);

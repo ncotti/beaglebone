@@ -35,21 +35,21 @@ int char_device_create(void) {
 
     // Allocate device number (MAJOR and MINOR)
     if ((retval = alloc_chrdev_region(&device_number, MINOR_NUMBER, NUMBER_OF_DEVICES, DEVICE_NAME)) != 0) {
-        printk(KERN_ERR "Couldn't allocate device number\n");
+        printk(ERROR("Couldn't allocate device number.\n"));
         goto chrdev_error;
     }
 
     // Create device class (This name will be seen as SUBSYSTEM=="DEVICE_CLASS_NAME"
     // for udev, and a folder with the same will be created inside "/sys/class/DEVICE_CLASS_NAME" )
     if ((device_class = class_create(THIS_MODULE, DEVICE_CLASS_NAME)) == NULL) {
-        printk(KERN_ERR "Device class couldn't be created\n");
+        printk(ERROR("Device class couldn't be created.\n"));
         retval = -1;
         goto class_error;
     }
 
     // Create device file (/sys/class/DEVICE_CLASS_NAME/DEVICE_NAME)
     if (device_create(device_class, NULL, device_number, NULL, DEVICE_NAME) == NULL) {
-        printk(KERN_ERR "Couldn't create device file\n");
+        printk(ERROR("Couldn't create device file.\n"));
         retval = -1;
         goto device_error;
     }
@@ -57,12 +57,12 @@ int char_device_create(void) {
     // Initializing and registering device file
     cdev_init(&my_device, &fops);
     if ((retval = cdev_add(&my_device, device_number, NUMBER_OF_DEVICES)) != 0 ) {
-        printk(KERN_ERR "Registering of device to kernel failed\n");
+        printk(ERROR("Registering of device to kernel failed.\n"));
         goto cdev_error;
     }
 
-    printk(KERN_INFO "Device /dev/%s created successfully.\n", DEVICE_NAME);
-    printk(KERN_INFO "Major: %d, Minor: %d\n", MAJOR(device_number), MINOR(device_number));
+    printk(INFO("Device /dev/%s created successfully. Major: %d, Minor: %d.\n"),
+        DEVICE_NAME, MAJOR(device_number), MINOR(device_number));
     return 0;
 
     cdev_error: device_destroy(device_class, device_number);
@@ -109,7 +109,7 @@ static ssize_t char_device_read(struct file *file, char *user_buffer, size_t cou
     // Get temperature
     temperature = bmp280_read_temperature();
     snprintf(out_string, sizeof(out_string), "%d.%d\n", temperature/100, temperature%100);
-    printk("Temperature of the device: %s\n", out_string);
+    printk(INFO("Temperature of the device: %s.\n"), out_string);
 
     // Copy data to user, return bytes that hasn't copied
     not_copied = copy_to_user(user_buffer, out_string, to_copy);

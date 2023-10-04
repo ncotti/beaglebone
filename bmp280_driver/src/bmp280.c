@@ -5,17 +5,23 @@ static s32 dig_T1, dig_T2, dig_T3;
 
 int bmp280_init(void) {
     u8 bmp280_id;
+    // struct device_node *clk_node = NULL;
+    // if ((temp_sensor_node = of_get_child_by_name(pdev->dev.of_node, DT_I2C_CHILD_NAME)) == NULL) {
+    //     printk(ERROR("Couldn't get bmp280 node.\n"));
+    //     goto i2c_ptr_error;
+    // }
+    // temp_sensor_error: of_node_put(temp_sensor_node);
 
     // Read ID
-    printk("First I2C read\n");
+    printk(INFO("First I2C read.\n"));
     bmp280_id = cotti_i2c_read(ADDRESS_ID);
-    printk("ID: 0x%x\n", bmp280_id);
+    printk(INFO("ID: 0x%x.\n"), bmp280_id);
 
     // Read calibration values
     dig_T1 = cotti_i2c_read(0x89) << 8 | cotti_i2c_read(0x88);
     dig_T2 = cotti_i2c_read(0x8b) << 8 | cotti_i2c_read(0x8a);
     dig_T3 = cotti_i2c_read(0x8d) << 8 | cotti_i2c_read(0x8c);
-    printk("Calibration values: 0x%x 0x%x 0x%x\n", dig_T1, dig_T2, dig_T3);
+    printk(INFO("Calibration values: 0x%x 0x%x 0x%x.\n"), dig_T1, dig_T2, dig_T3);
 
     if(dig_T2 > 32767)
 		dig_T2 -= 65536;
@@ -26,10 +32,10 @@ int bmp280_init(void) {
     // Initialize device
     cotti_i2c_write(0x5<<5, 0xf5);
     cotti_i2c_write((5<<5) | (5<<2) | (3<<0), 0xf4);
-    printk("Wrote configuration correctly!\n");
+    printk(INFO("Wrote configuration correctly.\n"));
 
     // if ((kthread = kthread_run(thread_function, &arg_t2, "Thread_2")) == NULL) {
-    //     printk("Couldn't create second thread\n");
+    //     printk(ERROR("Couldn't create second thread.\n"));
     //     return -1;
     // }
 
@@ -52,7 +58,7 @@ s32 bmp280_read_temperature(void) {
 	d2 = cotti_i2c_read(0xFB);
 	d3 = cotti_i2c_read(0xFC);
 	raw_temp = ((d1<<16) | (d2<<8) | d3) >> 4;
-    printk("Raw temp: 0x%x\n", raw_temp);
+    printk(INFO("Raw temp: 0x%x.\n"), raw_temp);
 
 	// Calculate temperature in degree
 	var1 = ((((raw_temp >> 3) - (dig_T1 << 1))) * (dig_T2)) >> 11;

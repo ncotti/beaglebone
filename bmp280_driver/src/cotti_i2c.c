@@ -77,7 +77,7 @@ int cotti_i2c_init(struct platform_device *pdev) {
 
     // Check that parent device exists (should be target-module@9c000)
     if (i2c_dev->parent == NULL) {
-        printk("I2C device doesn't have a parent\n");
+        printk(ERROR("I2C device doesn't have a parent.\n"));
         retval = -1;
         goto pdev_error;
     }
@@ -89,7 +89,7 @@ int cotti_i2c_init(struct platform_device *pdev) {
         !device_property_present(i2c_dev, DT_PROPERTY_CLK_REG_OFFSET)       ||
         !device_property_present(i2c_dev, DT_PROPERTY_CLK_FREQ)             ||
         !device_property_present(i2c_dev, DT_PROPERTY_INT_CLK_FREQ)) {
-        printk("Device properties for i2c device not found\n");
+        printk(ERROR("Device properties for i2c device not found.\n"));
         retval = -1;
         goto pdev_error;
     }
@@ -99,27 +99,27 @@ int cotti_i2c_init(struct platform_device *pdev) {
         (retval = device_property_read_u32(i2c_dev, DT_PROPERTY_CLK_FREQ, &bit_rate))               != 0 ||
         (retval = device_property_read_u32(i2c_dev, DT_PROPERTY_INT_CLK_FREQ, &int_clk_rate))       != 0 ||
         (retval = device_property_read_u32_array(i2c_dev, DT_PROPERTY_PINS, pins, 4))!= 0) {
-        printk("Couldn't read properties\n");
+        printk(ERROR("Couldn't read properties.\n"));
         goto pdev_error;
     }
 
     // Get clock node
     if ((clk_node = of_parse_phandle((*i2c_dev->parent).of_node, DT_PROPERTY_CLK_PHANDLE, 0)) == NULL ) {
-        printk("Couldn't get clock node from phandle.\n");
+        printk(ERROR("Couldn't get clock node from phandle.\n"));
         retval = -1;
         goto pdev_error;
     }
 
     // Get pinmux node
     if ((pinmux_node = of_parse_phandle(pdev->dev.of_node, DT_PROPERTY_PINMUX_PHANDLE, 0)) == NULL ) {
-        printk("Couldn't get pinmux node from phandle.\n");
+        printk(ERROR("Couldn't get pinmux node from phandle.\n"));
         retval = -1;
         goto clk_node_error;
     }
 
     // Get clock frequency
     if ((fclk = clk_get(i2c_dev, "fck")) == NULL) {
-        printk("Couldn't get fclk\n");
+        printk(ERROR("Couldn't get fclk.\n"));
         retval = -1;
         goto pinmux_node_error;
     }
@@ -172,18 +172,18 @@ int cotti_i2c_init(struct platform_device *pdev) {
         I2C_IRQ_AL, i2c_ptr + I2C_REG_IRQENABLE_SET);
 
     if ((g_irq = platform_get_irq(pdev, 0)) < 0) {
-        printk("Couldn't get IRQ\n");
+        printk(ERROR("Couldn't get I2C IRQ number.\n"));
         retval = g_irq;
         goto i2c_ptr_error;
     }
     if ((retval = request_irq(g_irq, (irq_handler_t) prv_isr, IRQF_TRIGGER_RISING, pdev->name, NULL)) < 0) {
-        printk("Couldn't get IRQ from platform\n");
+        printk(ERROR("Couldn't request I2C IRQ.\n"));
         goto i2c_ptr_error;
     }
 
     of_node_put(pinmux_node);
     of_node_put(clk_node);
-    printk("I2C successfully configured!\n");
+    printk(INFO("I2C successfully configured.\n"));
     return 0;
 
     i2c_ptr_error: iounmap(i2c_ptr);
@@ -232,7 +232,7 @@ int cotti_i2c_write(u8 value, u8 address) {
 
     if (wait_event_interruptible_timeout(wq_write, !g_len, msecs_to_jiffies(TIMEOUT_READ_WRITE)) == 0 ||
         wait_for_completion_timeout(&comp_stop, msecs_to_jiffies(TIMEOUT_READ_WRITE)) == 0 ) {
-        printk("Timeout reached on i2c write\n");
+        printk(WARNING("Timeout reached on i2c write.\n"));
         retval = -1;
     }
     reinit_completion(&comp_stop);
@@ -265,21 +265,20 @@ int cotti_i2c_read(u8 address) {
     // Wait until transmit data
     if (wait_event_interruptible_timeout(wq_write, !g_len, msecs_to_jiffies(TIMEOUT_READ_WRITE)) == 0 ||
         wait_for_completion_timeout(&comp_stop, msecs_to_jiffies(TIMEOUT_READ_WRITE)) == 0) {
-        printk("Timeout reached on i2c read register address' write\n");
+        printk(WARNING("Timeout reached on i2c read, while writing the address.\n"));
         reinit_completion(&comp_stop);
         mutex_unlock(&lock_bus);
         return -1;
     }
 
-    // Set RX 1 byte
+    // Read one byte
     prv_set_count(1);
-
     iowrite32(I2C_BIT_ENABLE | I2C_BIT_MASTER_MODE | I2C_BIT_START |
         I2C_BIT_STOP, i2c_ptr + I2C_REG_CON);
 
     if (wait_for_completion_timeout(&comp_read, msecs_to_jiffies(TIMEOUT_READ_WRITE)) == 0 ||
         wait_for_completion_timeout(&comp_stop, msecs_to_jiffies(TIMEOUT_READ_WRITE)) == 0) {
-        printk("Timeout reached on i2c read operation\n");
+        printk(WARNING("Timeout reached on i2c read operation.\n"));
         reinit_completion(&comp_read);
         reinit_completion(&comp_stop);
         mutex_unlock(&lock_bus);
@@ -301,11 +300,11 @@ static irqreturn_t prv_isr(int irq_number, void *dev_id) {
 
     while(enabled & (irq = ioread16(i2c_ptr + I2C_REG_IRQSTATUS))) {
         if (irq & I2C_IRQ_AL) {
-            printk("AL\n"); // TODO how to handle this
+            printk(WARNING("IRQ I2C AL: Arbitration lost.\n"));
         } if (irq & I2C_IRQ_ARDY) {
             complete(&comp_stop);
         } if (irq & I2C_IRQ_NACK) {
-            printk("NACK\n");
+            printk(WARNING("IRQ I2C NACK: Not acknowledge.\n"));
         } if (irq & I2C_IRQ_RRDY) {
             g_len--;
             g_read = prv_read();
@@ -334,7 +333,7 @@ static int prv_wait_for_bus_busy(void) {
     while(prv_is_irq_triggered(I2C_IRQ_BB) || mutex_is_locked(&lock_bus)) {
         msleep(1);
         if (i++ == 100) {
-            printk("Bus is busy\n");
+            printk(WARNING("I2C bus is busy.\n"));
             return -1;
         }
     }
@@ -351,7 +350,7 @@ static int prv_reset_i2c(void) {
     while (prv_is_resetting()) {
         msleep(1);
         if (i++ == 10) {
-            printk(KERN_ERR "Timeout on I2C reset\n");
+            printk(ERROR("Timeout on I2C reset.\n"));
             return -1;
         }
     };
