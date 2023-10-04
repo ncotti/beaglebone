@@ -26,8 +26,6 @@ static struct platform_driver my_driver = {
     },
 };
 
-static int irq;
-
 /******************************************************************************
  * Init and exit
 ******************************************************************************/
@@ -59,70 +57,25 @@ module_exit(my_module_exit);
 ******************************************************************************/
 
 static int dt_probe(struct platform_device *pdev) {
-    struct device *dev = &pdev->dev;
-    const char *label;
-    int my_value, ret;
-    char out_string[50];
-    int temperature;
-
-    // Check for device properties
-    if (!device_property_present(dev, DT_PROPERTY_LABEL)) {
-        printk("Device property \"label\" not found\n");
-        return -1;
-    } else if (!device_property_present(dev, DT_PROPERTY_MY_VALUE)) {
-        printk("Device property \"label\" not found\n");
+    if (cotti_i2c_init(pdev) != 0) {
         return -1;
     }
-
-    // Read device properties
-    if ((ret = device_property_read_string(dev, DT_PROPERTY_LABEL, &label)) != 0) {
-        printk("Couldn't read label\n");
-        return -1;
-    }
-    if ((ret = device_property_read_u32(dev, DT_PROPERTY_MY_VALUE, &my_value)) != 0) {
-        printk("Couldn't read my_value\n");
-        return -1;
-    }
-    printk("Label: %s\nMy value: %d\n", label, my_value);
-
-    printk("IRQ %d configured!\n", irq);
-
-    if (char_device_create() != 0) {
-        return -1;
-    }
-    if (cotti_i2c_init() != 0) {
-        return -1;
-    }
-
-    if ((irq = platform_get_irq(pdev, 0)) < 0) {
-        printk("Couldn't get IRQ\n");
-        return irq;
-    }
-
-    if ((ret = request_irq (irq, (irq_handler_t) cotti_i2c_isr ,IRQF_TRIGGER_RISING, pdev->name, NULL)) < 0) {
-        printk("Couldn't get IRQ from platform\n");
-        return ret;
-    }
-
     if (bmp280_init() != 0) {
         return -1;
     }
+    if (char_device_create() != 0) {
+        return -1;
+    }
 
-    printk("Values read: %x %x %x %x %x %x %x %x %x %x\n", cotti_i2c_read(0xD0),
-    cotti_i2c_read(0x89), cotti_i2c_read(0x8a), cotti_i2c_read(0x8b),
-    cotti_i2c_read(0x8c), cotti_i2c_read(0x8d), cotti_i2c_read(0x8e),
-    cotti_i2c_read(0x8f), cotti_i2c_read(0x90), cotti_i2c_read(0x91));
-
-    temperature = bmp280_read_temperature();
-    snprintf(out_string, sizeof(out_string), "%d.%d\n", temperature/100, temperature%100);
-    printk("Temperature of the device: %s\n", out_string);
     return 0;
+
+    // TODO if dt_probe fails, need to unitialize here
+
 }
 
 static int dt_remove(struct platform_device *pdev) {
-    free_irq(irq, NULL);
+    printk("Now I am in the remove function\n");
     char_device_remove();
     cotti_i2c_deinit();
-    printk("Now I am in the remove function\n");
     return 0;
 }

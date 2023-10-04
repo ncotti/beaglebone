@@ -1,47 +1,74 @@
-/* This is a very simple, barebone device tree overlay. */
-
 /dts-v1/;
 /plugin/;
 
-/* We will use the default driver for managing I2C, and add our device on top of it */
+/* This is used to check that the overlay was correctly loaded. Path:
+ * /proc/device-tree/chosen/overlays/cotti_i2c2 */
+&{/chosen/overlays} {
+    cotti_i2c2 = "Tue Oct  3 17:32:39 UTC 2023";
+};
+
+/* Modifying i2c2 device with own driver and properties */
 &i2c2 {
     #address-cells = <1>;
     #size-cells = <0>;
     compatible = "cotti,driver";
     status = "okay";
-    label = "Test";
-    my-value = <12>;
+    pinmux = <&am33xx_pinmux>;              // phandle to pin mux
+    pins = <0x154 0x32 0x150 0x32>;         // <PIN_OFFSET PIN_MODE>
+    clock-reg-offset = <12>;                // Offset address from clock base address
+    int-clock-frequency = <12000000>;       // internal clock frequency 12MHz
 
-    // // I2C device with slave address 0x76
-    // my_i2c_device@76 {
-    //     reg = <0x76>;
-    //     compatible = "cotti,driver";
-    //     status = "okay";
-    // };
+    // I2C device with slave address 0x76
+    temperature_sensor@76 {
+        reg = <0x76>;
+        compatible = "bosch,bmp280";
+        status = "okay";
+    };
 };
 
-/* Configure P9_21 and P9_22 to function as i2c by default (i2c2) */
-// &am33xx_pinmux {
-//     pinmux_P9_21_default_pin {
-//         pinctrl-single,pins = <0x154 0x32>;
-//     };
 
-//     pinmux_P9_22_default_pin {
-//         pinctrl-single,pins = <0x150 0x32>;
+/* Definition of the &i2c2 and parent device (using driver "ti,ompa4-i2c").
+ * Child devices of i2c@0 are omitted */
+// target-module@9c000 {
+//     compatible = "ti,sysc-omap2\0ti,sysc";
+//     reg = <0x9c000 0x08 0x9c010 0x08 0x9c090 0x08>;
+//     reg-names = "rev\0sysc\0syss";
+//     ti,sysc-mask = <0x307>;
+//     ti,sysc-sidle = <0x00 0x01 0x02 0x03>;
+//     ti,syss-mask = <0x01>;
+//     clocks = <0x2f 0x0c 0x00>;
+//     clock-names = "fck";
+//     #address-cells = <0x01>;
+//     #size-cells = <0x01>;
+//     ranges = <0x00 0x9c000 0x1000>;
+
+//     i2c@0 {
+//         compatible = "ti,omap4-i2c";
+//         #address-cells = <0x01>;
+//         #size-cells = <0x00>;
+//         reg = <0x00 0x1000>;
+//         interrupts = <0x1e>;
+//         status = "okay";
+//         pinctrl-names = "default";
+//         pinctrl-0;
+//         clock-frequency = <0x186a0>;
+//         symlink = "bone/i2c/2";
+//         phandle = <0x259>;
 //     };
 // };
 
-/* Definition of the &i2c1 parent device (using driver "ti,ompa4-i2c") */
-// i2c@0 {
-//     compatible = "ti,omap4-i2c";
+// per-cm@0 {
+//     compatible = "ti,omap4-cm";
+//     reg = <0x00 0x400>;
 //     #address-cells = <0x01>;
-//     #size-cells = <0x00>;
-//     reg = <0x00 0x1000>;
-//     interrupts = <0x47>;
-//     status = "okay";
-//     pinctrl-names = "default";
-//     pinctrl-0;
-//     clock-frequency = <0x186a0>;
-//     symlink = "bone/i2c/1";
-//     phandle = <0x24b>;
+//     #size-cells = <0x01>;
+//     ranges = <0x00 0x00 0x400>;
+//     phandle = <0x219>;
+
+//     l4ls-clkctrl@38 {
+//         compatible = "ti,clkctrl";
+//         reg = <0x38 0x2c 0x6c 0x28 0xac 0x0c 0xc0 0x1c 0xec 0x0c 0x10c 0x08 0x130 0x04>;
+//         #clock-cells = <0x02>;
+//         phandle = <0x2f>;
+//     };
 // };

@@ -5,9 +5,9 @@
 ******************************************************************************/
 
 // Pointers to memory mapped registers of the CPU
-static void* i2c_ptr = NULL;
-static void* clk_ptr = NULL;
-static void* control_module_ptr = NULL;
+static void __iomem *i2c_ptr = NULL;
+static void __iomem *clk_ptr = NULL;
+static void __iomem *control_module_ptr = NULL;
 
 // Used to signal from the IRQ that a data was received from the i2c bus
 DECLARE_COMPLETION(comp_read);
@@ -26,12 +26,15 @@ static u8 g_read = 0;
 static u8 g_write[2] = {0,0};   // Upper value is written first
 static u16 g_len = 0;
 
+static int g_irq;               // IRQ number, saved for deinitialization
+static u32 g_clk_reg_offset;    // Memory offset from base clock address
+
 /******************************************************************************
  * Static functions' prototypes
 ******************************************************************************/
 
-static inline u32 prv_is_clock_disabled(void) {
-    return ioread32(clk_ptr + CLOCK_REG_I2C2) & (CLOCK_IDLEST);
+static inline u32 prv_is_clk_disabled(void) {
+    return ioread32(clk_ptr + g_clk_reg_offset) & (CLK_IDLEST);
 }
 static inline void prv_set_bit(void* addr, u32 bit) {
     iowrite32(ioread32(addr) | bit, addr);
@@ -52,6 +55,7 @@ static inline u8 prv_is_irq_triggered(u16 irq) {
     return ioread16(i2c_ptr + I2C_REG_IRQSTATUS) & irq;
 }
 
+static irqreturn_t prv_isr(int irq_number, void *dev_id);
 static void prv_set_count(u16 count);
 static void prv_wakeup(void);
 static int prv_reset_i2c(void);
@@ -61,65 +65,100 @@ static int prv_wait_for_bus_busy(void);
  * Functions
 ******************************************************************************/
 
-/// @brief Handler for the I2C IRQ.
-irqreturn_t cotti_i2c_isr(int irq_number, void *dev_id) {
-    u16 irq;
-    u16 enabled = ioread16(i2c_ptr + I2C_REG_IRQENABLE_SET);
-
-    while(enabled & (irq = ioread16(i2c_ptr + I2C_REG_IRQSTATUS))) {
-        if (irq & I2C_IRQ_AL) {
-            printk("AL\n");
-        } if (irq & I2C_IRQ_ARDY) {
-            complete(&comp_stop);
-        } if (irq & I2C_IRQ_NACK) {
-            printk("NACK\n");
-        } if (irq & I2C_IRQ_RRDY) {
-            g_len--;
-            g_read = prv_read();
-            complete(&comp_read);
-        } if (irq & I2C_IRQ_XRDY) {
-            g_len--;
-            prv_write(g_write[g_len]);
-            wake_up_interruptible(&wq_write);
-        }
-        iowrite16(irq, i2c_ptr + I2C_REG_IRQSTATUS);
-    }
-    return IRQ_HANDLED;
-}
-
 /// @brief Initialize the I2C2 bus, with pins P9.21 and P9.22.
-int cotti_i2c_init(void) {
-    if((clk_ptr = ioremap(CLOCK_BASE_ADDRESS, CLOCK_SIZE)) == NULL) {
-        printk(KERN_ERR "Couldn't configure Clock Manager Peripheral\n");
-        return -1;
+int cotti_i2c_init(struct platform_device *pdev) {
+    struct device *i2c_dev = &pdev->dev;
+    struct device_node *clk_node = NULL;
+    struct device_node *pinmux_node = NULL;
+    struct clk *fclk;
+    u32 pins[4];
+    u32 scll, sclh, psc, bit_rate, fclk_rate, int_clk_rate;
+    int retval = -1;
+
+    // Check that parent device exists (should be target-module@9c000)
+    if (i2c_dev->parent == NULL) {
+        printk("I2C device doesn't have a parent\n");
+        retval = -1;
+        goto pdev_error;
     }
-    if((control_module_ptr = ioremap(CONTROL_MODULE_BASE_ADDRESS, CONTROL_MODULE_SIZE)) == NULL) {
-        printk(KERN_ERR "Couldn't configure I2C2\n");
-        goto clock_error;
+
+    // Check for device properties
+    if (!device_property_present(i2c_dev, DT_PROPERTY_PINMUX_PHANDLE)       ||
+        !device_property_present(i2c_dev, DT_PROPERTY_PINS)                 ||
+        !device_property_present(i2c_dev->parent, DT_PROPERTY_CLK_PHANDLE)  ||
+        !device_property_present(i2c_dev, DT_PROPERTY_CLK_REG_OFFSET)       ||
+        !device_property_present(i2c_dev, DT_PROPERTY_CLK_FREQ)             ||
+        !device_property_present(i2c_dev, DT_PROPERTY_INT_CLK_FREQ)) {
+        printk("Device properties for i2c device not found\n");
+        retval = -1;
+        goto pdev_error;
     }
-    if((i2c_ptr = ioremap(I2C2_BASE_ADDRESS, I2C2_SIZE)) == NULL) {
-        printk(KERN_ERR "Couldn't configure I2C2\n");
-        goto pin_mux_error;
+
+    // Read device properties
+    if ((retval = device_property_read_u32(i2c_dev, DT_PROPERTY_CLK_REG_OFFSET, &g_clk_reg_offset)) != 0 ||
+        (retval = device_property_read_u32(i2c_dev, DT_PROPERTY_CLK_FREQ, &bit_rate))               != 0 ||
+        (retval = device_property_read_u32(i2c_dev, DT_PROPERTY_INT_CLK_FREQ, &int_clk_rate))       != 0 ||
+        (retval = device_property_read_u32_array(i2c_dev, DT_PROPERTY_PINS, pins, 4))!= 0) {
+        printk("Couldn't read properties\n");
+        goto pdev_error;
+    }
+
+    // Get clock node
+    if ((clk_node = of_parse_phandle((*i2c_dev->parent).of_node, DT_PROPERTY_CLK_PHANDLE, 0)) == NULL ) {
+        printk("Couldn't get clock node from phandle.\n");
+        retval = -1;
+        goto pdev_error;
+    }
+
+    // Get pinmux node
+    if ((pinmux_node = of_parse_phandle(pdev->dev.of_node, DT_PROPERTY_PINMUX_PHANDLE, 0)) == NULL ) {
+        printk("Couldn't get pinmux node from phandle.\n");
+        retval = -1;
+        goto clk_node_error;
+    }
+
+    // Get clock frequency
+    if ((fclk = clk_get(i2c_dev, "fck")) == NULL) {
+        printk("Couldn't get fclk\n");
+        retval = -1;
+        goto pinmux_node_error;
+    }
+    fclk_rate = clk_get_rate(fclk);
+    clk_put(fclk);
+
+    // Get io addresses
+    if ((clk_ptr = of_iomap(clk_node, 0)) == NULL) {
+        retval = -1;
+        goto pinmux_node_error;
+    } if ((control_module_ptr = of_iomap(pinmux_node, 0)) == NULL) {
+        retval = -1;
+        goto clk_ptr_error;
+    } if ((i2c_ptr = devm_platform_ioremap_resource(pdev, 0)) == NULL) {
+        retval = -1;
+        goto control_module_ptr_error;
     }
 
     // Configure P9.21 and P9.22 pinmux as I2C
-    iowrite32(CONTROL_MODULE_PINMUX_P9_21_I2C, control_module_ptr + CONTROL_MODULE_REG_P9_21);
-    iowrite32(CONTROL_MODULE_PINMUX_P9_22_I2C, control_module_ptr + CONTROL_MODULE_REG_P9_22);
+    iowrite32(pins[1], control_module_ptr + pins[0]);
+    iowrite32(pins[3], control_module_ptr + pins[2]);
 
     prv_wakeup();
 
     if(prv_reset_i2c() != 0) {
-        goto i2c_error;
+        goto i2c_ptr_error;
     }
 
     // No idle, clocks always active, wakeup enable
     iowrite32(I2C_BIT_CLKACTIVITY | I2C_BIT_NOIDLE | I2C_BIT_WAKEUP,
         i2c_ptr + I2C_REG_SYSC);
 
-    // Configure clock
-    iowrite8(I2C_PSC_VALUE, i2c_ptr + I2C_REG_PSC);
-    iowrite8(I2C_SCLL_VALUE, i2c_ptr + I2C_REG_SCLL);
-    iowrite8(I2C_SCLH_VALUE, i2c_ptr + I2C_REG_SCLH);
+    // Configure internal I2C clock and SCL.
+    psc  = fclk_rate / int_clk_rate - 1;
+    scll = int_clk_rate / (bit_rate * 2) - 7;
+    sclh = int_clk_rate / (bit_rate * 2) - 5;
+    iowrite8((u8) psc, i2c_ptr + I2C_REG_PSC);
+    iowrite8((u8) scll, i2c_ptr + I2C_REG_SCLL);
+    iowrite8((u8) sclh, i2c_ptr + I2C_REG_SCLH);
 
     // Enable I2C device
     iowrite32(I2C_BIT_ENABLE | I2C_BIT_MASTER_MODE | I2C_BIT_TX,
@@ -132,15 +171,28 @@ int cotti_i2c_init(void) {
     iowrite16(I2C_IRQ_XRDY | I2C_IRQ_RRDY | I2C_IRQ_NACK | I2C_IRQ_ARDY |
         I2C_IRQ_AL, i2c_ptr + I2C_REG_IRQENABLE_SET);
 
+    if ((g_irq = platform_get_irq(pdev, 0)) < 0) {
+        printk("Couldn't get IRQ\n");
+        retval = g_irq;
+        goto i2c_ptr_error;
+    }
+    if ((retval = request_irq(g_irq, (irq_handler_t) prv_isr, IRQF_TRIGGER_RISING, pdev->name, NULL)) < 0) {
+        printk("Couldn't get IRQ from platform\n");
+        goto i2c_ptr_error;
+    }
+
+    of_node_put(pinmux_node);
+    of_node_put(clk_node);
     printk("I2C successfully configured!\n");
     return 0;
 
-    i2c_error: iounmap(i2c_ptr);
-    pin_mux_error: iounmap(control_module_ptr);
-    clock_error: iounmap(clk_ptr);
-    i2c_ptr = NULL;
-    clk_ptr = NULL;
-    return -1;
+    i2c_ptr_error: iounmap(i2c_ptr);
+    control_module_ptr_error: iounmap(control_module_ptr);
+    clk_ptr_error: iounmap(clk_ptr);
+    pinmux_node_error: of_node_put(pinmux_node);
+    clk_node_error: of_node_put(clk_node);
+    pdev_error: i2c_ptr = NULL; clk_ptr = NULL; control_module_ptr = NULL;
+    return retval;
 }
 
 /// @brief Deinitialize the I2C2 bus.
@@ -152,6 +204,7 @@ void cotti_i2c_deinit(void) {
     } if (i2c_ptr != NULL) {
         iounmap(i2c_ptr);
     }
+    free_irq(g_irq, NULL);
 }
 
 /// @brief Write a value to the I2C bus.
@@ -241,11 +294,37 @@ int cotti_i2c_read(u8 address) {
  * I2C private operations
 ******************************************************************************/
 
+/// @brief Handler for the I2C IRQ.
+static irqreturn_t prv_isr(int irq_number, void *dev_id) {
+    u16 irq;
+    u16 enabled = ioread16(i2c_ptr + I2C_REG_IRQENABLE_SET);
+
+    while(enabled & (irq = ioread16(i2c_ptr + I2C_REG_IRQSTATUS))) {
+        if (irq & I2C_IRQ_AL) {
+            printk("AL\n"); // TODO how to handle this
+        } if (irq & I2C_IRQ_ARDY) {
+            complete(&comp_stop);
+        } if (irq & I2C_IRQ_NACK) {
+            printk("NACK\n");
+        } if (irq & I2C_IRQ_RRDY) {
+            g_len--;
+            g_read = prv_read();
+            complete(&comp_read);
+        } if (irq & I2C_IRQ_XRDY) {
+            g_len--;
+            prv_write(g_write[g_len]);
+            wake_up_interruptible(&wq_write);
+        }
+        iowrite16(irq, i2c_ptr + I2C_REG_IRQSTATUS);
+    }
+    return IRQ_HANDLED;
+}
+
 /// @brief Wakeup the I2C2 clock. The OS might put the I2C clock to sleep, so
 ///  re-enable the clock just in case.
 static void prv_wakeup(void) {
-    iowrite32(CLOCK_I2C2_ENABLE, clk_ptr + CLOCK_REG_I2C2);
-    while(prv_is_clock_disabled());
+    iowrite32(CLK_I2C2_ENABLE, clk_ptr + g_clk_reg_offset);
+    while(prv_is_clk_disabled());
 }
 
 /// @brief Wait until teh bus is freed.
