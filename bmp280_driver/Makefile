@@ -2,7 +2,7 @@ obj-m += driver.o
 
 EXTRA_CFLAGS := -I$(src)/inc
 
-driver-objs := src/dt_bmp280.o src/char_device.o src/bmp280.o src/cotti_i2c.o
+driver-objs := src/temp_sensor.o src/char_device.o src/bmp280.o src/cotti_i2c.o
 
 all:
 	make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules

@@ -13,7 +13,7 @@ MODULE_DESCRIPTION("This module initializes the I2C2 bus interface based on a "
 "directory to read and configure the temperature sensor BMP280.");
 
 // Can be any name here
-#define DRIVER_NAME "cotti-temp-sensor"
+#define DRIVER_NAME "temp-sensor"
 
 // Value of the property "compatible" to match this driver
 #define DT_COMPATIBLE "cotti,i2c"

@@ -1,4 +1,4 @@
-#include "dt_bmp280.h"
+#include "temp_sensor.h"
 
 /******************************************************************************
  * Static functions' prototypes
