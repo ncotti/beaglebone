@@ -23,8 +23,8 @@
 
 int cotti_i2c_init(struct platform_device *pdev);
 void cotti_i2c_deinit(void);
-int cotti_i2c_write(u8 value, u8 address);
-int cotti_i2c_read(u8 address);
+int cotti_i2c_write(u8 value, u8 reg_address, u8 slave_address);
+int cotti_i2c_read(u8 address, u8 slave_address);
 
 #define TIMEOUT_READ_WRITE 100  // msec
 
@@ -35,14 +35,10 @@ int cotti_i2c_read(u8 address);
 #define DT_PROPERTY_INT_CLK_FREQ    "int-clock-frequency"
 #define DT_PROPERTY_CLK_REG_OFFSET  "clock-reg-offset"
 #define DT_PROPERTY_BIT_RATE        "bit-rate"
-#define DT_I2C_CHILD_NAME           "temperature_sensor"
 
 // Clock Manager Peripheral (CM_PER)
 #define CLK_I2C2_ENABLE         0x02
 #define CLK_IDLEST              (0x3 << 16)
-
-// I2C2 TODO remove
-#define I2C_SLAVE_ADDRESS       0x76
 
 // Registers' offset address
 #define I2C_REG_REVNB_LO        0x00

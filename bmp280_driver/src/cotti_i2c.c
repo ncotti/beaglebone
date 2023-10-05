@@ -33,17 +33,11 @@ static u32 g_clk_reg_offset;    // Memory offset from base clock address
  * Static functions' prototypes
 ******************************************************************************/
 
-static inline u32 prv_is_clk_disabled(void) {
-    return ioread32(clk_ptr + g_clk_reg_offset) & (CLK_IDLEST);
-}
 static inline void prv_set_bit(void* addr, u32 bit) {
     iowrite32(ioread32(addr) | bit, addr);
 }
 static inline void prv_clear_bit(void* addr, u32 bit) {
     iowrite32(ioread32(addr) & ~bit, addr);
-}
-static inline u8 prv_is_resetting(void) {
-    return ! (ioread8(i2c_ptr + I2C_REG_SYSS) & 1);
 }
 static inline void prv_write(u8 value) {
     iowrite8(value, i2c_ptr + I2C_REG_DATA);
@@ -51,8 +45,20 @@ static inline void prv_write(u8 value) {
 static inline u8 prv_read(void) {
     return ioread8(i2c_ptr + I2C_REG_DATA);
 }
+static inline void prv_set_slave_address(u8 addr) {
+     iowrite32(addr, i2c_ptr + I2C_REG_SA);
+}
+
+/// @brief The "xx_is_yy" functions return "1" if the statement is true,
+///  "0" if the statement is false
+static inline u8 prv_is_resetting(void) {
+    return ! (ioread8(i2c_ptr + I2C_REG_SYSS) & 1);
+}
 static inline u8 prv_is_irq_triggered(u16 irq) {
     return ioread16(i2c_ptr + I2C_REG_IRQSTATUS) & irq;
+}
+static inline u32 prv_is_clk_disabled(void) {
+    return ioread32(clk_ptr + g_clk_reg_offset) & (CLK_IDLEST);
 }
 
 static irqreturn_t prv_isr(int irq_number, void *dev_id);
@@ -164,9 +170,6 @@ int cotti_i2c_init(struct platform_device *pdev) {
     iowrite32(I2C_BIT_ENABLE | I2C_BIT_MASTER_MODE | I2C_BIT_TX,
         i2c_ptr + I2C_REG_CON);
 
-    // Configure Slave address
-    iowrite32(I2C_SLAVE_ADDRESS, i2c_ptr + I2C_REG_SA);
-
     // Enable interrupts
     iowrite16(I2C_IRQ_XRDY | I2C_IRQ_RRDY | I2C_IRQ_NACK | I2C_IRQ_ARDY |
         I2C_IRQ_AL, i2c_ptr + I2C_REG_IRQENABLE_SET);
@@ -209,8 +212,10 @@ void cotti_i2c_deinit(void) {
 
 /// @brief Write a value to the I2C bus.
 /// @param value Value to be written
-/// @param address Address of the device register
-int cotti_i2c_write(u8 value, u8 address) {
+/// @param reg_address Address of the device's register
+/// @param slave_address Address of the I2C slave
+/// @return "0" on success, "-1" on error.
+int cotti_i2c_write(u8 value, u8 reg_address, u8 slave_address) {
     int retval = 0;
     prv_wakeup();
 
@@ -219,9 +224,11 @@ int cotti_i2c_write(u8 value, u8 address) {
     }
     mutex_lock(&lock_bus);
 
+    prv_set_slave_address(slave_address);
+
     // Amount of bytes to transfer
     prv_set_count(2);
-    g_write[1] = address;
+    g_write[1] = reg_address;
     g_write[0] = value;
 
     // Clear fifo buffer
@@ -242,14 +249,17 @@ int cotti_i2c_write(u8 value, u8 address) {
 
 /// @brief Read a value from the I2C bus.
 /// @param address Register address of the device
-/// @return Value read.
-int cotti_i2c_read(u8 address) {
+/// @param slave_address Address of the I2C slave
+/// @return On success, the value read from 0 to 255. "-1" on error
+int cotti_i2c_read(u8 address, u8 slave_address) {
     prv_wakeup();
 
     if (prv_wait_for_bus_busy() != 0) {
         return -1;
     }
     mutex_lock(&lock_bus);
+
+    prv_set_slave_address(slave_address);
 
     // Amount of bytes to transfer
     prv_set_count(1);
@@ -326,7 +336,7 @@ static void prv_wakeup(void) {
     while(prv_is_clk_disabled());
 }
 
-/// @brief Wait until teh bus is freed.
+/// @brief Wait until the bus is freed.
 /// @return "0" if the bus is free. "-1" on timeout.
 static int prv_wait_for_bus_busy(void) {
     u8 i = 0;
