@@ -9,7 +9,9 @@
 #include <linux/uaccess.h>
 #include <linux/string.h>
 #include <linux/slab.h>
+#include <linux/ioctl.h>
 #include "bmp280.h"
+#include "bmp280_types.h"
 #include "log.h"
 
 int char_device_create(const char *name);

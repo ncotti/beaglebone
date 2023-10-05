@@ -9,37 +9,18 @@
 #include <linux/of_device.h>
 #include "cotti_i2c.h"
 #include "log.h"
-
-/// @brief Operation modes.
-typedef enum bmp280_mode {
-    SLEEP = 0,      // Don't measure
-    FORCED = 1,     // Do one measure and return to sleep
-    NORMAL = 3,     // Measure periodically
-} bmp280_mode;
-
-/// @brief Operation frequency [Hz]. Uses the time standby time and the measurement
-/// time, assuming ultra low power oversampling (Table 14 of the datasheet).
-typedef enum bmp280_freq {
-    FREQ_167    = 0,    // 166,67 Hz
-    FREQ_15     = 1,    // 14,71 Hz
-    FREQ_8      = 2,    // 7,66 Hz
-    FREQ_4      = 3,    // 3,91 Hz
-    FREQ_2      = 4,    // 1,98 Hz
-    FREQ_1      = 5,    // 0,99 Hz
-    FREQ_0_50   = 6,    // 0,5 Hz
-    FREQ_0_25   = 7,    // 0,25 Hz
-} bmp280_freq;
+#include "bmp280_types.h"
 
 int bmp280_init(struct platform_device *pdev);
 void bmp280_deinit(void);
 s32 bmp280_read_temperature(void);
-void bmp280_set_mode(bmp280_mode mode);
-void bmp280_set_frequency(bmp280_freq freq);
+int bmp280_set_mode(bmp280_mode mode);
+int bmp280_set_frequency(bmp280_freq freq);
+void bmp280_set_unit(bmp280_unit unit);
+int bmp280_is_connected(void);
 
 #define DT_I2C_CHILD_NAME           "temperature_sensor"
 #define DT_PROPERTY_REG             "reg"
-
-#define BMP280_ID                   0x58
 
 #define BMP280_REG_DIG_T1_LSB       0x88
 #define BMP280_REG_DIG_T1_MSB       0x89

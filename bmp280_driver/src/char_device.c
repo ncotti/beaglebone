@@ -8,6 +8,7 @@ static int char_device_open(struct inode *device_file, struct file *instance);
 static int char_device_close(struct inode *device_file, struct file *instance);
 static ssize_t char_device_write(struct file *file, const char *user_buffer, size_t count, loff_t *offs);
 static ssize_t char_device_read(struct file *file, char *user_buffer, size_t count, loff_t *offs);
+static long int char_device_ioctl(struct file *file, unsigned cmd, unsigned long arg);
 
 /******************************************************************************
  * Static variables
@@ -23,6 +24,7 @@ static struct file_operations fops = {
     .release = char_device_close,
     .write = char_device_write,
     .read = char_device_read,
+    .unlocked_ioctl = char_device_ioctl,
 };
 
 /******************************************************************************
@@ -95,37 +97,76 @@ void char_device_remove(void) {
 
 /// @brief This function is called when the device is opened
 static int char_device_open(struct inode *device_file, struct file *instance) {
+    if(!bmp280_is_connected()) {
+        printk("Couldn't open device.\n");
+        return -1;
+    }
     return 0;
 }
 
-/// @brief This function is called when the device is opened
+/// @brief This function is called when the device is closed
 static int char_device_close(struct inode *device_file, struct file *instance) {
     return 0;
 }
 
 /// @brief Does nothing
-static ssize_t char_device_write(struct file *file, const char *user_buffer, size_t count, loff_t *offs) {
+static ssize_t char_device_write(struct file *file, const char __user *user_buffer, size_t count, loff_t *offs) {
     return 0;
 }
 
-/// @brief Read data out of the buffer
-static ssize_t char_device_read(struct file *file, char *user_buffer, size_t count, loff_t *offs) {
-    int to_copy, not_copied, delta;
-    char out_string[50];
-    int temperature;
-
-    // Get amount of data to copy
-    to_copy = min(count, sizeof(out_string));
+/// @brief Read temperature. Returns a string like "50.80".
+/// @return Amount of bytes read, or "-1" on error.
+static ssize_t char_device_read(struct file *file, char __user *user_buffer, size_t count, loff_t *offs) {
+    int to_copy, not_copied;
+    char out_string[10];
+    s32 temperature;
 
     // Get temperature
-    temperature = bmp280_read_temperature();
-    snprintf(out_string, sizeof(out_string), "%d.%d\n", temperature/100, temperature%100);
-    printk(INFO("Temperature of the device: %s.\n"), out_string);
+    if ((temperature = bmp280_read_temperature()) == BMP280_ERROR) {
+        printk(ERROR("Couldn't read temperature.\n"));
+        return -1;
+    } else {
+        snprintf(out_string, sizeof(out_string), "%d.%02d\n", temperature/100, temperature%100);
+    }
+
+    // Get amount of data to copy
+    to_copy = min(count, strlen(out_string) + 1);
 
     // Copy data to user, return bytes that hasn't copied
     not_copied = copy_to_user(user_buffer, out_string, to_copy);
 
-    // Calculate data
-    delta = to_copy - not_copied;
-    return delta;
+    return to_copy - not_copied;    // Return bytes copied
+}
+
+static long int char_device_ioctl(struct file *file, unsigned cmd, unsigned long __user arg) {
+    int operation;
+    if (copy_from_user(&operation, (int *) arg, sizeof(operation)) != 0) {
+        printk(ERROR("Couldn't copy data from user.\n"));
+        return -1;
+    }
+    switch(cmd) {
+        case IOCTL_CMD_SET_FREQ:
+            if (bmp280_set_frequency((bmp280_freq) operation) != 0) {
+                printk("Couldn't change frequency.\n");
+                return -1;
+            }
+            printk(INFO("Frequency changed to %d.\n"), operation);
+        break;
+        case IOCTL_CMD_SET_MODE:
+            if (bmp280_set_mode((bmp280_mode) operation) != 0) {
+                printk(ERROR("Couldn't change mode.\n"));
+                return -1;
+            }
+            printk(INFO("Mode changed to %d.\n"), operation);
+        break;
+        case IOCTL_CMD_SET_UNIT:
+            bmp280_set_unit((bmp280_unit) operation);
+            printk(INFO("Unit changed to %d.\n"), operation);
+        break;
+        default:
+            printk(ERROR("Unknown ioctl command.\n"));
+            return -1;
+        break;
+    }
+    return 0;
 }
