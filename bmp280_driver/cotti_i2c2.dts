@@ -27,7 +27,7 @@
 };
 
 
-/* Definition of the &i2c2 and parent device (using driver "ti,ompa4-i2c").
+/* Definition of the &i2c2 and parent device from the Beaglebone DTB.
  * Child devices of i2c@0 are omitted */
 // target-module@9c000 {
 //     compatible = "ti,sysc-omap2\0ti,sysc";
@@ -57,6 +57,8 @@
 //     };
 // };
 
+/* Definition of the clock device referenced by the BeagleBone DTB (phandle = <0x2f>).
+ * Address equals CM_PER base address + <0x38> */
 // per-cm@0 {
 //     compatible = "ti,omap4-cm";
 //     reg = <0x00 0x400>;
