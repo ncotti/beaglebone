@@ -14,6 +14,8 @@ echo "1. Compile kernel module"
 echo "2. Install kernel module"
 echo "3. Remove kernel module"
 echo "4. Read temperature"
+echo "5. Give internet to the BBB"
+echo "6. Open an interative terminal on the beaglebone"
 echo "q. Quit"
 
 read -p "Select option: " -r -n 1 option
@@ -31,6 +33,12 @@ case $option in
 };;
 4) {
     read_temperature
+};;
+5) {
+    internet_over_usb
+};;
+6) {
+    interactive_terminal
 };;
 *) {
     echo "Leaving"
